@@ -1,0 +1,31 @@
+{
+    "name": "Device Tracker",
+
+    "namespace": "STPH\\deviceTracker", 
+
+    "description": "Track devices centrally used in cross-project context.",
+
+    "documentation": "README.md",
+
+    "authors": [
+        {
+             "name": "Ekin Tertemiz",
+             "email": "ekin.tertemiz@swisstph.ch",
+             "institution": "Swiss Tropical and Public Health Instititute (Swiss TPH)"
+         }
+     ],
+     
+    "enable-every-page-hooks-on-system-pages": false,
+
+    "permissions": [
+        "redcap_every_page_top"
+    ],
+
+
+    "crons": [],
+
+    "compatibility": {
+        "php-version-min": "8.0.24",
+        "redcap-version-min": "12.4.1"
+    }
+}
