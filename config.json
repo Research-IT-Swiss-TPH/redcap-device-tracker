@@ -21,7 +21,45 @@
         "redcap_every_page_top"
     ],
 
+    "framework-version": 10,
 
+    "project-settings": [
+        {
+            "key": "trackings",
+            "type": "sub_settings",
+            "name": "Trackings",
+            "repeatable": true,
+            "sub_settings": [
+                {
+                    "key": "tracking-field",
+                    "type": "field-list",
+                    "name": "<b>Tracking Field</b><br>Select tracking field to be transformed into Tracking Interface",
+                    "required": true
+                }
+            ]
+        }
+    ],
+
+    "links":{
+        "control-center": [
+            {
+                "name": "Device Tracker Overview",
+                "key": "device-tracker",
+                "icon": "fas fa-route",
+                "url": "link-control-center.php",
+                "show-header-and-footer": true
+            }
+        ],
+        "project": [
+            {
+                "name": "Device Tracker Dashboard",
+                "key": "device-tracker",
+                "icon": "fas fa-route",
+                "url": "link-project.php",
+                "show-header-and-footer": true                
+            }
+        ]
+    },
     "crons": [],
 
     "compatibility": {
