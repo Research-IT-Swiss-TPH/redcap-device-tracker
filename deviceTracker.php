@@ -2,6 +2,7 @@
 
 namespace STPH\deviceTracker;
 
+use REDCap;
 use ExternalModules\ExternalModules;
 require __DIR__ . '/vendor/autoload.php';
 
@@ -63,7 +64,45 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return $trackings;
     }
 
+    public function getAvailableDevices($types=[]) {
 
+        //  General filter logic
+        $filterLogic = '([session_device_state][last-instance] = 0 or isblankormissingcode([session_device_state][last-instance]))';
+
+        //  Add filter by type(s) if given
+        $filterForTypes = "";
+        if(!empty($types)) {
+            if(count($types) == 1) {
+                $filterForTypes = "[device_type] = " . $types[0];
+            } else {             
+                $filterForTypes = "(";
+                foreach ($types as $key => $type) {
+                    if($key == 0) {
+                        $filterForTypes .= "[device_type] = " . $type ;
+                    } else {
+                        $filterForTypes .= " or [device_type] = " . $type;
+                    }
+                }
+                $filterForTypes .= ")";
+            }
+            $filterLogic .= " and " . $filterForTypes;
+        }
+
+        $params = array(
+            'project_id' => $this->getSystemSetting("devices-project"),
+            'filterLogic'=> $filterLogic, 
+            'fields'=>array('device_type','record_id', 'session_device_state')
+        );
+
+        return REDCap::getData($params);
+    }
+
+
+    /**
+     * Include Javascript
+     * 
+     * @since 1.0.0
+     */
     private function includeJavascript($data): void {
         ?>
         <script src="<?php print $this->getUrl('js/main.js'); ?>"></script>

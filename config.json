@@ -23,6 +23,15 @@
 
     "framework-version": 10,
 
+    "system-settings": [
+        {
+            "key": "devices-project",
+            "type": "project-id",
+            "name": "<b>Devices Project</b><br>Project that manages device data",
+            "required": true
+        }
+    ],
+
     "project-settings": [
         {
             "key": "trackings",
