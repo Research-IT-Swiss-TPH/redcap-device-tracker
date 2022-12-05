@@ -3,7 +3,7 @@
 
     "namespace": "STPH\\deviceTracker", 
 
-    "description": "Track devices centrally used in cross-project context.",
+    "description": "Track devices in cross-project context, while saving all device data in a central project.",
 
     "documentation": "README.md",
 
