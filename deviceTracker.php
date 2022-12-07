@@ -10,6 +10,7 @@ require __DIR__ . '/vendor/autoload.php';
 // Declare your module class, which must extend AbstractExternalModule 
 class deviceTracker extends \ExternalModules\AbstractExternalModule {    
 
+    private int $id;
 
     /**
     * Constructs the class
@@ -19,6 +20,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     {
         parent::__construct();
         //$this->trackings = $this->getTrackings();
+        $this->id = $_GET["id"] ?? 0;
     }
 
 
@@ -38,11 +40,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Check if is form page and has tracking fields
             if($_GET["page"] && in_array($_GET["page"], array_keys($this->trackings))) {
                 
-                //dump($this->trackings[$_GET["page"]]);
-                //  Include Javascript
-                $data = (object) [];
-                $data->trackings = json_encode($this->trackings[$_GET["page"]]);                
-                $this->includeJavascript($data);
+
+                //  Include Javascript             
+                $this->includeJavascript($this->trackings[$_GET["page"]], $_GET["id"]);
             }
 
         }
@@ -91,29 +91,122 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         $params = array(
             'project_id' => $this->getSystemSetting("devices-project"),
             'filterLogic'=> $filterLogic, 
-            'fields'=>array('device_type','record_id', 'session_device_state')
+            'fields'=>array('record_id', 'device_type', 'session_device_state')
         );
 
         return REDCap::getData($params);
     }
 
+    private function getFieldStates($fields) {
+
+         $response = [];
+
+         // 0. Loop through tracking_fields
+         foreach ($fields as $key => $field) {
+            
+            $params = [
+                'project_id'=> $_GET["project_id"], 
+                'records'=>$_GET["id"],
+                'fields' => $field,
+                'return_format' => 'json'
+            ];
+            $device_id = reset(json_decode(REDCap::getData($params), true))[$field];
+            
+            //  1. Check if we have selected a device
+            if(empty($device_id)) {
+                $device_state = "no-device-selected";
+            } else {
+
+                $pk = $this->getRecordIdField($this->getSystemSetting("devices-project"));
+                $params = [
+                    'project_id' => $this->getSystemSetting("devices-project"),
+                    'records' => [$device_id],
+                    'fields'=>array($pk),
+                    'return_format' => 'json'
+                ];
+                $device_id_valid = reset(json_decode(REDCap::getData($params), true))[$pk];
+
+                //  2. Check if we have a valid device
+                if(empty($device_id_valid)) {
+                    $device_state = "device-not-found";
+                } else {
+
+                    $params = array(
+                        'project_id' => $this->getSystemSetting("devices-project"),
+                        'records' => [$device_id],
+                        'fields'=>array('session_device_state'),
+                        'return_format' => 'json'
+                     );
+                     $device_session_state = reset(json_decode(REDCap::getData($params), true))['session_device_state'];
+                     if($device_session_state == null) {
+                        $device_state = "no-session-created";
+                     } else {
+                        $device_state = $device_session_state;
+                     }
+                }
+            }
+
+            //  Switch case trough calculated device_state and return field state
+            switch ($device_state) {
+                case 0:
+                    $response[$field] = "reset";  //  reset
+                break;                    
+                case 1:
+                    $response[$field] = "assigned";  //  assigned
+                    break;
+                case 2:
+                    $response[$field] = "returned";  //  returned
+                    break;
+                default:
+                    $response[$field] = $device_state;  //  undefined
+                    break;
+            }
+         }
+        return $response;
+    }
 
     /**
      * Include Javascript
      * 
      * @since 1.0.0
      */
-    private function includeJavascript($data): void {
+    private function includeJavascript($tracking_fields, $record_id): void {
+        //  Loop through all tracking fields for each form and insert for each a wrapper into DOM,
+        //  so that vue can actually mount an  there.
+        foreach ($tracking_fields as $key => $field_name) {
+            ?>
+            <div id="STPH_DT_WRAPPER_<?= $field_name ?>" style="display: none;">
+                <div id="STPH_DT_FIELD_<?= $field_name ?>"></div>            
+            </div>            
+            <?php
+        }
+        //  move mounted vue instances to correct position (=vue target) 
+        //  within DOM for each field
         ?>
-        <script src="<?php print $this->getUrl('js/main.js'); ?>"></script>
         <script>
             $(function() {
                 $(document).ready(function() {
-                    STPH_deviceTracker.trackings = <?= $data->trackings ?>;
-                    STPH_deviceTracker.init();
+                    var trackings =  <?=json_encode($tracking_fields) ?>;
+                    trackings.forEach(function(field_name){
+                        //  Insert vue target
+                        var target = $('tr#'+field_name+'-tr').find('input');
+                        var wrapper = $('#STPH_DT_WRAPPER_' + field_name);
+                        target.parent().prepend(wrapper);
+                        wrapper.show();
+                        console.log(field_name);
+
+                    });
                 })
             });
         </script>
+        <!-- backend data helpers -->
+        <script>
+            const stph_dt_getTrackingFieldsWithStateFromBackend = function() {
+                    return <?= json_encode($this->getFieldStates($tracking_fields, $record_id)) ?>
+            }
+        </script>
+        <!-- actual vue scripts -->
+        <script src="<?= $this->getUrl('./dist/render.js') ?>"></script>
         <?php
     }
     

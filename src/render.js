@@ -3,11 +3,9 @@ import App from './App.vue'
 
 Vue.config.productionTip = false
 
-var fields = { 
-  "field-1": 0, 
-  "field-2": 1, 
-  "field-3": 0
-}; 
+var fields = stph_dt_getTrackingFieldsWithStateFromBackend();
+
+console.log(fields);
 
 Object.keys(fields).forEach(key => {
   new Vue({
@@ -17,6 +15,6 @@ Object.keys(fields).forEach(key => {
         state: fields[key]
       }
     }),
-  }).$mount("#"+key)
+  }).$mount("#STPH_DT_FIELD_"+key)
 
 });
