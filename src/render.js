@@ -3,7 +3,7 @@ import App from './App.vue'
 
 Vue.config.productionTip = false
 
-var fields = stph_dt_getTrackingFieldsWithStateFromBackend();
+var fields = stph_dt_getFieldStatesFromBackend();
 
 console.log(fields);
 

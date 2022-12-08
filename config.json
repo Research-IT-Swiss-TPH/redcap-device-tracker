@@ -44,6 +44,26 @@
                     "type": "field-list",
                     "name": "<b>Tracking Field</b><br>Select tracking field to be transformed into Tracking Interface",
                     "required": true
+                },
+                {
+                    "key": "device-types",
+                    "name": "Device Types",
+                    "type": "checkbox",
+                    "choices": [
+                        {
+                            "name": "Type A",
+                            "value": "a"
+                        },
+                        {
+                            "name": "Type B",
+                            "value": "b"
+                        },
+                        {
+                            "name": "Type C",
+                            "value": "c"
+                        }                        
+                    ]
+
                 }
             ]
         }

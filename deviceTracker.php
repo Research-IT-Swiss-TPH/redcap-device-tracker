@@ -10,7 +10,6 @@ require __DIR__ . '/vendor/autoload.php';
 // Declare your module class, which must extend AbstractExternalModule 
 class deviceTracker extends \ExternalModules\AbstractExternalModule {    
 
-    private int $id;
 
     /**
     * Constructs the class
@@ -20,7 +19,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     {
         parent::__construct();
         //$this->trackings = $this->getTrackings();
-        $this->id = $_GET["id"] ?? 0;
     }
 
 
@@ -46,8 +44,30 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             }
 
         }
-
     }
+
+    /**
+     * Hooks into redcap_module_configuration_settings
+     *
+     * @param string $project_id
+     * @param array $settings
+     *
+     * @since 1.0.0
+     *
+     */
+    // function redcap_module_configuration_settings($project_id, $settings): array
+    // {
+
+    //     if ($project_id != null) {
+    //         foreach ($settings as &$setting) {
+    //             if ($setting["key"] == "device-types") {
+    //                 $setting["name"] = '<div data-pid="' . $project_id . '" data-url="' . $this->getUrl("requestHandler.php") . '" style="padding:15px;display:inline-block;" id="api-description-wrapper">' . $this->generate_config_description($project_id) . '</div><script src=' . $this->getUrl("js/config.js") . '></script>';
+    //             }
+    //         }
+    //     }
+    //     return $settings;
+    // }
+
 
     /**
      * Get trackings in usefull structure
@@ -201,7 +221,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         </script>
         <!-- backend data helpers -->
         <script>
-            const stph_dt_getTrackingFieldsWithStateFromBackend = function() {
+            const stph_dt_getFieldStatesFromBackend = function() {
                     return <?= json_encode($this->getFieldStates($tracking_fields, $record_id)) ?>
             }
         </script>
