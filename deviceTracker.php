@@ -117,12 +117,13 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return REDCap::getData($params);
     }
 
-    private function getFieldStates($fields) {
+    private function getFieldMeta($fields) {
 
-         $response = [];
+         $response = array();
 
          // 0. Loop through tracking_fields
          foreach ($fields as $key => $field) {
+            $fieldMeta = array();
             
             $params = [
                 'project_id'=> $_GET["project_id"], 
@@ -133,7 +134,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $device_id = reset(json_decode(REDCap::getData($params), true))[$field];
             
             //  1. Check if we have selected a device
-            if(empty($device_id)) {
+            if(empty($device_id)) {                
                 $device_state = "no-device-selected";
             } else {
 
@@ -149,8 +150,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 //  2. Check if we have a valid device
                 if(empty($device_id_valid)) {
                     $device_state = "device-not-found";
-                } else {
-
+                } else {                    
                     $params = array(
                         'project_id' => $this->getSystemSetting("devices-project"),
                         'records' => [$device_id],
@@ -169,18 +169,23 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Switch case trough calculated device_state and return field state
             switch ($device_state) {
                 case 0:
-                    $response[$field] = "reset";  //  reset
+                    $fieldMeta["state"] =  "reset";  //  reset
                 break;                    
                 case 1:
-                    $response[$field] = "assigned";  //  assigned
+                    $fieldMeta["state"] =  "assigned";  //  assigned
                     break;
                 case 2:
-                    $response[$field] = "returned";  //  returned
+                    $fieldMeta["state"] =  "returned";  //  returned
                     break;
                 default:
-                    $response[$field] = $device_state;  //  undefined
+                    $fieldMeta["state"] =  $device_state;  //  undefined
                     break;
             }
+
+            $fieldMeta["name"] = $field;
+            $fieldMeta["device"] = $device_id_valid;
+            $response[] = $fieldMeta;
+            
          }
         return $response;
     }
@@ -208,6 +213,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 $(document).ready(function() {
                     var trackings =  <?=json_encode($tracking_fields) ?>;
                     trackings.forEach(function(field_name){
+                        //  Add device-tracking class to field
+
                         //  Insert vue target
                         var target = $('tr#'+field_name+'-tr').find('input');
                         var wrapper = $('#STPH_DT_WRAPPER_' + field_name);
@@ -221,8 +228,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         </script>
         <!-- backend data helpers -->
         <script>
-            const stph_dt_getFieldStatesFromBackend = function() {
-                    return <?= json_encode($this->getFieldStates($tracking_fields, $record_id)) ?>
+            const stph_dt_getFieldMetaFromBackend = function() {
+                    return <?= json_encode($this->getFieldMeta($tracking_fields, $record_id)) ?>
             }
         </script>
         <!-- actual vue scripts -->
