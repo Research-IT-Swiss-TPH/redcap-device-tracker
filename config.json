@@ -47,23 +47,8 @@
                 },
                 {
                     "key": "device-types",
-                    "name": "Device Types",
-                    "type": "checkbox",
-                    "choices": [
-                        {
-                            "name": "Type A",
-                            "value": "a"
-                        },
-                        {
-                            "name": "Type B",
-                            "value": "b"
-                        },
-                        {
-                            "name": "Type C",
-                            "value": "c"
-                        }                        
-                    ]
-
+                    "name": "<b>Filter by Device Types</b><br>Comma separated list",
+                    "type": "text"
                 }
             ]
         }
