@@ -5,7 +5,11 @@ Vue.config.productionTip = false
 
 var fields = stph_dt_getFieldStatesFromBackend();
 
-console.log(fields);
+//  Bootstrap Vue
+import { BootstrapVue} from 'bootstrap-vue'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
+Vue.use(BootstrapVue)
+
 
 Object.keys(fields).forEach(key => {
   new Vue({
