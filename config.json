@@ -59,7 +59,7 @@
             {
                 "name": "Device Tracker Overview",
                 "key": "device-tracker",
-                "icon": "fas fa-route",
+                "icon": "fas fa-satellite-dish",
                 "url": "link-control-center.php",
                 "show-header-and-footer": true
             }
@@ -68,7 +68,7 @@
             {
                 "name": "Device Tracker Dashboard",
                 "key": "device-tracker",
-                "icon": "fas fa-route",
+                "icon": "fas fa-satellite-dish",
                 "url": "link-project.php",
                 "show-header-and-footer": true                
             }
