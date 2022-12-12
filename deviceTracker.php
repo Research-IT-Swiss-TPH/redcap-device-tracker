@@ -213,14 +213,15 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 $(document).ready(function() {
                     var trackings =  <?=json_encode($tracking_fields) ?>;
                     trackings.forEach(function(field_name){
-                        //  Add device-tracking class to field
+
+                        //  Insert icon-button
 
                         //  Insert vue target
                         var target = $('tr#'+field_name+'-tr').find('input');
                         var wrapper = $('#STPH_DT_WRAPPER_' + field_name);
                         target.parent().prepend(wrapper);
                         wrapper.show();
-                        console.log(field_name);
+                        console.log(field_name + " prepended wrapper. Hiding.");
 
                     });
                 })

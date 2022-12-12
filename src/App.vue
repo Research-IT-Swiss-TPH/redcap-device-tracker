@@ -1,38 +1,57 @@
 <template>
     <div class="mt-3 mb-3">
-        <div>
-          <b-badge variant="info">{{this.state}}</b-badge>
-        </div>
-        <b-button-group class="device-tracker-interface" size="sm" v-if="this.state != 'reset'">
-          <b-button :disabled="this.isDisabledAssign" class="btn-primaryrc"><i class="fas fa-plus-circle "></i> Assign</b-button>
-          <b-button :disabled="this.isDisabledReturn" class="btn-primaryrc"><i class="fas fa-history"></i> Return</b-button>
-          <b-button :disabled="this.isDisabledReset" class="btn-primaryrc"><i class="fas fa-power-off"></i> Reset</b-button>
+      <div  v-if="state != 'reset'">
+        <small>
+          current field state: <b-badge>{{state}}</b-badge>                      
+        </small>
+        <br/>
+        <small class="text-muted mb-1 mt-3">
+          Please choose action for device tracking.
+        </small>
+        <b-button-group class="device-tracker-interface">
+          <b-button @click="openModal('modal-assign')" :disabled="isDisabledAssign" class="btn-primaryrc"><i class="fas fa-plus-circle "></i> Assign</b-button>
+          <b-button :disabled="isDisabledReturn" class="btn-primaryrc"><i class="fas fa-history"></i> Return</b-button>
+          <b-button :disabled="isDisabledReset" class="btn-primaryrc"><i class="fas fa-power-off"></i> Reset</b-button>
         </b-button-group>
-
+      </div>
+      <div v-else>
+        <small class="text-muted mb-1 mt-3">
+          Device Tracking has been finalized.
+        </small>
+        <p>show log here</p>
+      </div>
+      <ModalAssign :name="name" />
     </div>
   </template>
   
   <script>
   import HelloWorld from './components/HelloWorld.vue'
+  import ModalAssign from './components/ModalAssign.vue'
+
   
   export default {
     name: 'App',
     components: {
+      ModalAssign,
       HelloWorld
     },
     data() {
       return {
-        bar: this.foo
+
       }
     },
     props: {
         name: String,
         state: String,
-        device: String
+        device: String,
+        types: String,
     },
     methods: {
-      getMessage() {
+      getMessage: function() {
         return this.name + " has state: " + this.state 
+      },
+      openModal: function(id) {
+        this.$bvModal.show(id)
       }
     },
     computed: {
