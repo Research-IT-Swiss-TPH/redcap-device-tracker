@@ -214,7 +214,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                     var trackings =  <?=json_encode($tracking_fields) ?>;
                     trackings.forEach(function(field_name){
 
-                        //  Insert icon-button
+                        //  Insert module object
+                        //var module = <?=$this->getJavascriptModuleObjectName()?>;
 
                         //  Insert vue target
                         var target = $('tr#'+field_name+'-tr').find('input');
