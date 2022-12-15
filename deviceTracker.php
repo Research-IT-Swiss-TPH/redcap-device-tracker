@@ -47,6 +47,28 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }
 
     /**
+     * Request Handler Methods
+     * Can be accessed via AJAX/AXIOS
+     * 
+     * 
+     */
+    public function validateDevice($device_id, $trackingField) {
+
+        $types = $this->getDeviceTypes($trackingField);
+        $availableDevices = $this->getAvailableDevices($types);
+
+        if(in_array($device_id, $availableDevices)) {
+            $this->sendResponse(
+                array("device_id" => $device_id)
+            );
+        } else {
+            $this->sendError(404);
+        }
+
+    }
+
+
+    /**
      * Hooks into redcap_module_configuration_settings
      *
      * @param string $project_id
@@ -84,7 +106,19 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return $trackings;
     }
 
-    public function getAvailableDevices($types=[]) {
+    private function getDeviceTypes(string $field) :array {
+        $trackings = $this->getSubSettings('trackings');
+        foreach ($trackings as $key => $settings) {
+            if($settings['tracking-field'] == $field) {
+                if(!empty($settings["device-types"])) {
+                    return explode(",", trim($settings["device-types"]) );
+                } 
+            }
+        }
+        return [];
+    }
+
+    public function getAvailableDevices(array $types=[]) :array {
 
         //  General filter logic
         $filterLogic = '([session_device_state][last-instance] = 0 or isblankormissingcode([session_device_state][last-instance]))';
@@ -238,5 +272,47 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         <script src="<?= $this->getUrl('./dist/render.js') ?>"></script>
         <?php
     }
+
+   /**  
+    * 
+    * Echoes sucessful JSON response
+    *   
+    * @return void
+    * @since 1.0.0
+    *
+    */      
+    private function sendResponse($response) {
+        header('Content-Type: application/json; charset=UTF-8');        
+        echo json_encode($response);
+        exit();
+    }
+
+   /**  
+    * 
+    * Echoes error JSON response
+    *   
+    * @return void
+    * @since 1.0.0
+    *
+    */      
+    private function sendError($status = 400) {
+        header('Content-Type: application/json; charset=UTF-8');
+
+        switch ($status) {
+            case 400:
+                header("HTTP/1.1 400 Bad Request");
+                break;
+            case 404:
+                header("HTTP/1.1 404 Not Found");
+                break;                    
+            case 403:
+                header("HTTP/1.1 403 Forbidden");
+                break;
+            default:
+                # code...
+                break;
+        }
+        die();
+    }     
     
 }

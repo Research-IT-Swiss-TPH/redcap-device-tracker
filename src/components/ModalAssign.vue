@@ -50,7 +50,7 @@
             <b-button v-if="!isDeviceAssigned" :disabled="isAssigning" @click="cancel()">
                 Cancel
             </b-button>
-            <b-button v-if="isDeviceAssigned" class="btn-primaryrc" @click="ok()">
+            <b-button v-if="isDeviceAssigned" class="btn-primaryrc" @click="complete()">
                 Complete 
             </b-button>
         </template>        
@@ -67,7 +67,8 @@
             isValidating: false,
             isLoading: false,
             isDeviceAssigned: false,
-            isAssigning: false
+            isAssigning: false,
+            reloadTime: 3
         }
     },
     props: {
@@ -95,6 +96,9 @@
             await new Promise(resolve => setTimeout(resolve, 1500));
             this.isAssigning = false
             this.isDeviceAssigned = true
+        },
+        complete() {
+            location.reload()
         },
         resetDevice: function() {
             this.userInput = ""
