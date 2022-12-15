@@ -3,8 +3,18 @@ import App from './App.vue'
 
 Vue.config.productionTip = false
 
+//  Constants set via Backend
+var baseURL = stph_dt_getBaseUrlFromBackend();
+console.log(baseURL);
 var fields = stph_dt_getFieldMetaFromBackend();
-console.log(fields);
+
+
+//  Axios  
+import axios from 'axios'
+import VueAxios from 'vue-axios'
+Vue.use(VueAxios, axios.create({
+  baseURL: baseURL,
+}))
 
 //  Bootstrap Vue
 import { BootstrapVue } from 'bootstrap-vue'
@@ -22,16 +32,3 @@ fields.forEach(function(field, idx){
     }),
   }).$mount("#STPH_DT_FIELD_"+field.name)
 })
-
-
-// Object.keys(fields).forEach(key => {
-//   new Vue({
-//     render: h => h(App, {
-//       props: {
-//         field: key,
-//         state: fields[key]
-//       }
-//     }),
-//   }).$mount("#STPH_DT_FIELD_"+key)
-
-// });

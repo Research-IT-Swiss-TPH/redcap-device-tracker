@@ -264,8 +264,11 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         </script>
         <!-- backend data helpers -->
         <script>
+            const stph_dt_getBaseUrlFromBackend = function () {
+                return '<?= $this->getUrl("requestHandler.php") ?>'
+            }
             const stph_dt_getFieldMetaFromBackend = function() {
-                    return <?= json_encode($this->getFieldMeta($tracking_fields, $record_id)) ?>
+                return <?= json_encode($this->getFieldMeta($tracking_fields, $record_id)) ?>
             }
         </script>
         <!-- actual vue scripts -->

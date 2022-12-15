@@ -3,7 +3,7 @@
 namespace STPH\deviceTracker;
 
 if ($_REQUEST['action'] == 'validate-device-id') {
-    $module->validateDevice($_POST["device_id"]);
+    $module->validateDevice($_POST["device_id"], $_POST["tracking_field"]);
 }
 
 
