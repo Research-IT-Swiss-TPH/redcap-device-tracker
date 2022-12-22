@@ -7,7 +7,7 @@ Vue.config.productionTip = false
 var baseURL = stph_dt_getBaseUrlFromBackend();
 console.log(baseURL);
 var fields = stph_dt_getFieldMetaFromBackend();
-
+var page = stph_dt_getPageMetaFromBackend();
 
 //  Axios  
 import axios from 'axios'
@@ -25,9 +25,8 @@ fields.forEach(function(field, idx){
   new Vue({
     render: h => h(App, {
       props: {
-        name: field.name,
-        state: field.state,
-        device: field.device
+        page: page,
+        field: field
       }
     }),
   }).$mount("#STPH_DT_FIELD_"+field.name)

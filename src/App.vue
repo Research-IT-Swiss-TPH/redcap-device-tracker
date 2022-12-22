@@ -1,15 +1,15 @@
 <template>
     <div class="mt-3 mb-3">
-      <div  v-if="state != 'reset'">
+      <div  v-if="field.state != 'reset'">
         <small>
-          current field state: <b-badge>{{state}}</b-badge>                      
+          current field state: <b-badge>{{field.state}}</b-badge>                      
         </small>
         <br/>
         <small class="text-muted mb-1 mt-3">
           Please choose action for device tracking.
         </small>
         <b-button-group class="device-tracker-interface">
-          <b-button @click="openModal('modal-assign')" :disabled="isDisabledAssign" class="btn-primaryrc"><i class="fas fa-plus-circle "></i> Assign</b-button>
+          <b-button @click="openModal('modal-assign')" :disabled="isDisabledAssign" class="btn-primaryrc"><i class="fas fa-plus-circle"></i> Assign</b-button>
           <b-button :disabled="isDisabledReturn" class="btn-primaryrc"><i class="fas fa-history"></i> Return</b-button>
           <b-button :disabled="isDisabledReset" class="btn-primaryrc"><i class="fas fa-power-off"></i> Reset</b-button>
         </b-button-group>
@@ -20,7 +20,7 @@
         </small>
         <p>show log here</p>
       </div>
-      <ModalAssign :name="name" />
+      <ModalAssign :field="field" :page="page"/>
     </div>
   </template>
   
@@ -37,18 +37,15 @@
     },
     data() {
       return {
-
       }
     },
     props: {
-        name: String,
-        state: String,
-        device: String,
-        types: String,
+        page: Object,
+        field: Object
     },
     methods: {
       getMessage: function() {
-        return this.name + " has state: " + this.state 
+        return this.field.name + " has state: " + this.field.state 
       },
       openModal: function(id) {
         this.$bvModal.show(id)
@@ -56,14 +53,16 @@
     },
     computed: {
       isDisabledAssign: function() {
-        return !(this.state == 'no-device-selected')
+        return !(this.field.state == 'no-device-selected')
       },
       isDisabledReturn: function() {
-        return !(this.isDisabledAssign && this.state == 'assigned')
+        return !(this.isDisabledAssign && this.field.state == 'assigned')
       },
       isDisabledReset: function() {
-        return !(this.isDisabledReturn && this.state == 'returned')
+        return !(this.isDisabledReturn && this.field.state == 'returned')
       }
+    },
+    mounted() {
     }
   }
   </script>

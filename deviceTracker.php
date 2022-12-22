@@ -27,7 +27,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     *
     * @since 1.0.0
     */
-    public function redcap_every_page_top($project_id = null) {
+    public function redcap_every_page_top($project_id = null) {     
 
         //  Init
         $this->trackings = $this->getTrackings();
@@ -38,11 +38,15 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Check if is form page and has tracking fields
             if($_GET["page"] && in_array($_GET["page"], array_keys($this->trackings))) {
                 
-
                 //  Include Javascript             
                 $this->includeJavascript($this->trackings[$_GET["page"]], $_GET["id"]);
             }
 
+        }
+
+        //  for dev only
+        if($this->isPage('DataEntry/index.php') && $_GET["pid"] == $this->getDevicesProject()) {
+            dump($this->getDevicesProjectFields($_GET["id"]));
         }
     }
 
@@ -52,12 +56,13 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * 
      * 
      */
-    public function validateDevice($device_id, $trackingField) {
+    public function validateDevice(string $device_id, string $trackingField) {
 
         $types = $this->getDeviceTypes($trackingField);
         $availableDevices = $this->getAvailableDevices($types);
 
-        if(in_array($device_id, $availableDevices)) {
+        $device = $availableDevices[$device_id];
+        if(isset($device)) {
             $this->sendResponse(
                 array("device_id" => $device_id)
             );
@@ -65,6 +70,80 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $this->sendError(404);
         }
 
+    }
+
+    private function getDevicesProjectFields($destRecordId) {
+        return REDCap::getData(array(
+            'return_format' => 'array', 
+            'project_id' => $this->getDevicesProject(),
+            'records' => $destRecordId, 
+            'fields' => [],
+            'exportDataAccessGroups' => true
+        ));  
+    }
+
+    public function assignDevice(string $device_id, string $tracking_field, string $owner_id, string $tracking_project) {
+
+        $devices_project = $this->getDevicesProject();
+
+        //  Save data to devices project first
+
+        //  Retrieve destination project data
+        $destProject = new \Project( $devices_project );
+        $destRecordId = $device_id;
+        $destEventId = $destProject->firstEventId;
+        
+        $destProjectFields = $this->getDevicesProjectFields($destRecordId);
+
+        //  Calculate destination instance id from current count + 1
+        $currentInstanceId = count((array)$destProjectFields[$destRecordId]['repeat_instances'][$destEventId]["sessions"]);
+        $destInstanceId = $currentInstanceId + 1;
+
+        //  check if current instance is null or has field["session_state] == 0
+        $currentInstanceDeviceState = $destProjectFields[$destRecordId]["repeat_instances"][$destEventId]["sessions"][$currentInstanceId]["session_device_state"];
+        if($currentInstanceDeviceState != 0 || $currentInstanceDeviceState == NULL) {
+            $this->sendError(400);
+        } 
+
+        //  Define destination field values
+        $invalid_pipings = [];
+        $destFieldValues = [];
+
+        $destFieldValues["session_owner_id"] = $owner_id;
+        $destFieldValues["session_project_id"] = $tracking_project;
+        $destFieldValues["session_device_state"] = 1;   //  1 for unavailable
+
+        //  to do: dates
+
+        $data = [$destRecordId => ["repeat_instances" => [$destEventId => ["sessions" => [$destInstanceId => $destFieldValues]]]]];       
+        
+        $args = [
+            'project_id' => $devices_project,
+            'data' => $data
+        ];
+
+        $saved = REDCap::saveData($args);
+       
+        //  Save data to tracking project then
+
+
+        $response = array(
+            "current_data" => $destProjectFields,
+            "tracking_project" => $tracking_project,
+            "devices_project" => $devices_project,
+            "saved_devices_p" => $saved
+        );
+
+        $this->sendResponse($response);
+
+        //  add session with device_id to device_project new session
+
+        /**
+         * 
+         * session_owner_id = 
+         * 
+         */
+            
     }
 
 
@@ -90,6 +169,22 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     //     return $settings;
     // }
 
+
+    private function getDevicesProject() {
+        return $this->getSystemSetting("devices-project");
+    }
+
+    /**
+     * Get Page Meta
+     * 
+     */
+    private function getPageMeta() {
+        return array(
+            "project_id" => $_GET["pid"],
+            "record_id"  => $_GET["id"],
+            "page_name"  => $_GET["page"]
+        );
+    }
 
     /**
      * Get trackings in usefull structure
@@ -269,6 +364,10 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             }
             const stph_dt_getFieldMetaFromBackend = function() {
                 return <?= json_encode($this->getFieldMeta($tracking_fields, $record_id)) ?>
+            }
+
+            const stph_dt_getPageMetaFromBackend = function() {
+                return <?= json_encode($this->getPageMeta()) ?>
             }
         </script>
         <!-- actual vue scripts -->
