@@ -2,6 +2,7 @@
 
 namespace STPH\deviceTracker;
 
+use Exception;
 use REDCap;
 use ExternalModules\ExternalModules;
 require __DIR__ . '/vendor/autoload.php';
@@ -10,6 +11,8 @@ require __DIR__ . '/vendor/autoload.php';
 // Declare your module class, which must extend AbstractExternalModule 
 class deviceTracker extends \ExternalModules\AbstractExternalModule {    
 
+    private $devices_project_id;
+    private $devices_event_id;
 
     /**
     * Constructs the class
@@ -18,7 +21,11 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     public function __construct()
     {
         parent::__construct();
+        //  validate module settings..
         //$this->trackings = $this->getTrackings();
+        $this->devices_project_id = $this->getSystemSetting("devices-project");
+        $this->devices_event_id = (new \Project( $this->devices_project_id ))->firstEventId;
+
     }
 
 
@@ -35,6 +42,16 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         //  Check if Data Entry Page and record id is defined
         if($this->isPage('DataEntry/index.php') && isset( $_GET['id']) && defined('USERID')) {
 
+            // $args_test = array(
+            //     'return_format' => 'array', 
+            //     'project_id' => $_GET["pid"],
+            //     'records' => $_GET["id"],
+            //     'fields' => [],
+            //     'exportDataAccessGroups' => true   
+            // );
+            // $data_test = REDCap::getData($args_test);
+            // dump($data_test);
+
             //  Check if is form page and has tracking fields
             if($_GET["page"] && in_array($_GET["page"], array_keys($this->trackings))) {
                 
@@ -45,9 +62,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         }
 
         //  for dev only
-        if($this->isPage('DataEntry/index.php') && $_GET["pid"] == $this->getDevicesProject()) {
-            dump($this->getDevicesProjectFields($_GET["id"]));
-        }
+        // if($this->isPage('DataEntry/index.php') && $_GET["pid"] == $this->getDevicesProject()) {
+        //     dump($this->getDevicesProjectFields($_GET["id"]));
+        // }
     }
 
     /**
@@ -72,78 +89,134 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
     }
 
-    private function getDevicesProjectFields($destRecordId) {
-        return REDCap::getData(array(
+    private function getCurrentDeviceInfo($device_id) {
+        $data = REDCap::getData(array(
             'return_format' => 'array', 
-            'project_id' => $this->getDevicesProject(),
-            'records' => $destRecordId, 
-            'fields' => [],
+            'project_id' => $this->devices_project_id,
+            'records' => $device_id,
+            'fields' => ["session_device_state"],
             'exportDataAccessGroups' => true
-        ));  
+        ));
+
+        $currentInstanceId = count((array)$data[$device_id]['repeat_instances'][$this->devices_event_id]["sessions"]);
+        $currentInstanceState  = $data[$device_id]["repeat_instances"][$this->devices_event_id]["sessions"][$currentInstanceId]["session_device_state"];
+
+        return array($currentInstanceId, $currentInstanceState);
+    }
+
+    private function getCurrentTrackingInfo($pid, $field, $id) {
+        $result = $this->query(
+                    "SELECT value FROM redcap_data WHERE project_id = ? AND field_name = ? AND record = ?", 
+                    [ $pid, $field, $id ]
+                );
+        return $result->fetch_object()->value;
     }
 
     public function assignDevice(string $device_id, string $tracking_field, string $owner_id, string $tracking_project) {
 
-        $devices_project = $this->getDevicesProject();
-
-        //  Save data to devices project first
-
-        //  Retrieve destination project data
-        $destProject = new \Project( $devices_project );
-        $destRecordId = $device_id;
-        $destEventId = $destProject->firstEventId;
-        
-        $destProjectFields = $this->getDevicesProjectFields($destRecordId);
-
-        //  Calculate destination instance id from current count + 1
-        $currentInstanceId = count((array)$destProjectFields[$destRecordId]['repeat_instances'][$destEventId]["sessions"]);
-        $destInstanceId = $currentInstanceId + 1;
-
-        //  check if current instance is null or has field["session_state] == 0
-        $currentInstanceDeviceState = $destProjectFields[$destRecordId]["repeat_instances"][$destEventId]["sessions"][$currentInstanceId]["session_device_state"];
-        if($currentInstanceDeviceState != 0 || $currentInstanceDeviceState == NULL) {
-            $this->sendError(400);
-        } 
-
-        //  Define destination field values
-        $invalid_pipings = [];
-        $destFieldValues = [];
-
-        $destFieldValues["session_owner_id"] = $owner_id;
-        $destFieldValues["session_project_id"] = $tracking_project;
-        $destFieldValues["session_device_state"] = 1;   //  1 for unavailable
-
-        //  to do: dates
-
-        $data = [$destRecordId => ["repeat_instances" => [$destEventId => ["sessions" => [$destInstanceId => $destFieldValues]]]]];       
-        
-        $args = [
-            'project_id' => $devices_project,
-            'data' => $data
-        ];
-
-        $saved = REDCap::saveData($args);
-       
-        //  Save data to tracking project then
-
-
-        $response = array(
-            "current_data" => $destProjectFields,
-            "tracking_project" => $tracking_project,
-            "devices_project" => $devices_project,
-            "saved_devices_p" => $saved
-        );
-
-        $this->sendResponse($response);
-
-        //  add session with device_id to device_project new session
-
         /**
+         * Sequential data saving to REDCap 
          * 
-         * session_owner_id = 
+         * 1. Save data to devices project - suffix: _p
+         * 2. Save data to tracking project - suffix: _t
          * 
          */
+
+        try {
+
+            /**
+             * Start transaction in case there is an error
+             * no data will be saved in any of the save procedures
+             * https://www.mysqltutorial.org/mysql-transaction.aspx
+             * 
+             */
+            $this->query("SET autocommit = 0;", []);
+            $this->query("START TRANSACTION;", []);
+
+            /**
+             * 1. Save data to devices project
+             * 
+             */  
             
+            //  Retrieve device instance info
+            list($currentInstanceId, $currentInstanceState) = $this->getCurrentDeviceInfo($device_id);
+            if( ($currentInstanceId == 0 && $currentInstanceState != NULL) || $currentInstanceId != 0 && $currentInstanceState != 0) {
+                $this->sendError(400, "Invalid current instance state. Expected 0, found: " . $currentInstanceId);
+            }
+
+            //  Define destination field values
+            $destFieldValues = [
+                "session_owner_id" => $owner_id,
+                "session_project_id" => $tracking_project,
+                "session_device_state" => 1,
+                "session_assign_date" => date("Y-m-d")
+            ];
+
+            //  to do: additional fields that are being piped
+            $nextInstanceId = $currentInstanceId + 1;
+            $data_p = [$device_id => ["repeat_instances" => [$this->devices_event_id => ["sessions" => [$nextInstanceId => $destFieldValues]]]]];       
+            
+            $params_p = [
+                'project_id' => $this->devices_project_id,
+                'data' => $data_p
+            ];
+
+            $saved_p = REDCap::saveData($params_p);
+
+            //  Check if there were any errors during save and throw error
+            if(count($saved_p["errors"]) !== 0) {
+                throw new Exception(implode(", ", $saved_p["errors"]));
+            }
+        
+            /**
+             * 2. Save data to tracking project
+             * 
+             */
+
+            //  Get tracking project data fields
+            $currentTrackingValue = $this->getCurrentTrackingInfo($tracking_project, $tracking_field, $owner_id);
+            if(!empty($currentTrackingValue)) {
+                throw new Exception("Invalid current tracking field. Expected NULL found: " . $currentTrackingValue);
+            }
+
+            // save tracking
+            $trackingProject = new \Project( $tracking_project );
+            $trackingEventId = $trackingProject->firstEventId;
+
+            $data_t = [$owner_id => [$trackingEventId => [ $tracking_field => $device_id]]];
+            $params_t = [
+                'project_id' => $tracking_project,
+                'data' => $data_t
+            ];
+
+            $saved_t = REDCap::saveData($params_t);
+            //  Check if there were any errors during save and throw error
+            if(count($saved_t["errors"]) !== 0) {
+                throw new Exception(implode(", ", $saved_t["errors"]));
+            }
+
+            /**
+             * Commit Transaction
+             * 
+             */
+
+            $this->query("COMMIT;", []);
+            $this->query("SET autocommit = 1;", []);
+
+        } catch (\Throwable $th) {
+            //  Rollback and report Error
+            $this->query("ROLLBACK;", []);
+            $this->sendError(500, $th->getMessage());
+        }
+
+        $response = array(
+            "tracking_project" => $tracking_project,
+            "devices_project" => $this->devices_project_id,
+            "saved_devices" => $saved_p,
+            "saved_tracking" => $saved_t
+        );
+
+        $this->sendResponse($response); 
     }
 
 
@@ -168,11 +241,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     //     }
     //     return $settings;
     // }
-
-
-    private function getDevicesProject() {
-        return $this->getSystemSetting("devices-project");
-    }
 
     /**
      * Get Page Meta
@@ -295,7 +363,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 }
             }
 
-            //  Switch case trough calculated device_state and return field state
+            //  Switch case through calculated device_state and return field state
             switch ($device_state) {
                 case 0:
                     $fieldMeta["state"] =  "reset";  //  reset
@@ -397,10 +465,13 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     * @since 1.0.0
     *
     */      
-    private function sendError($status = 400) {
+    private function sendError($status = 400, $msg = "") {
         header('Content-Type: application/json; charset=UTF-8');
 
         switch ($status) {
+            case 500:
+                header("HTTP/1.1 500 Internal Server Error'");
+                break;
             case 400:
                 header("HTTP/1.1 400 Bad Request");
                 break;
@@ -414,6 +485,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 # code...
                 break;
         }
+        if($msg !="") {
+            echo json_encode(array("error" => $msg));
+        } 
         die();
     }     
     

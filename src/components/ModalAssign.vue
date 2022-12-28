@@ -117,14 +117,32 @@
         },
         async assignDevice() {
             this.isAssigning = true
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            this.axios({
+                    params: {
+                        action: 'assign-device',
+                        device_id: this.userInput,
+                        owner_id: this.page.record_id,
+                        tracking_field: this.field.name
+                    }
+                })
+                .then( response => {
+                    console.log(response.data)
+                    //this.device_id = response.data.device_id;
+                    this.isAssigning = false
+                    this.isDeviceAssigned = true
+                })
+                .catch(e => {
+                    //this.isValidDevice = false
+                    this.isAssigning = false
+                    console.log(e.message)
+                })            
+            //await new Promise(resolve => setTimeout(resolve, 1500));
             // this.axios({
             //     params: 'assign-device',
             //     device_id: this.device_id,
             //     tracking_field: this.field
             // })
-            this.isAssigning = false
-            this.isDeviceAssigned = true
+
         },
         complete() {
             location.reload()
