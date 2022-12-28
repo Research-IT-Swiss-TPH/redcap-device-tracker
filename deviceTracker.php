@@ -75,7 +75,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     public function validateDevice(string $device_id, string $trackingField) {
 
-        $types = $this->getDeviceTypes($trackingField);
+        $types = $this->getDeviceTypesForField($trackingField);
         $availableDevices = $this->getAvailableDevices($types);
 
         $device = $availableDevices[$device_id];
@@ -89,6 +89,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
     }
 
+    /**
+     * Get current device info
+     * Returns current device instance number and state
+     * 
+     * @since 1.0.0
+     */
     private function getCurrentDeviceInfo($device_id) {
         $data = REDCap::getData(array(
             'return_format' => 'array', 
@@ -112,7 +118,17 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return $result->fetch_object()->value;
     }
 
-    public function assignDevice(string $device_id, string $tracking_field, string $owner_id, string $tracking_project) {
+    public function handleTracking($action, $tracking) {
+        
+    }
+
+    /**
+     * Assign Device
+     * Performs cross-project data saving to assign a device to tracking.
+     * 
+     * @since 1.0.0
+     */
+    public function assignDevice(object $tracking) {
 
         /**
          * Sequential data saving to REDCap 
@@ -139,22 +155,22 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
              */  
             
             //  Retrieve device instance info
-            list($currentInstanceId, $currentInstanceState) = $this->getCurrentDeviceInfo($device_id);
+            list($currentInstanceId, $currentInstanceState) = $this->getCurrentDeviceInfo($tracking->device);
+            //  Do state checks (different for every action)
             if( ($currentInstanceId == 0 && $currentInstanceState != NULL) || $currentInstanceId != 0 && $currentInstanceState != 0) {
                 $this->sendError(400, "Invalid current instance state. Expected 0, found: " . $currentInstanceId);
             }
 
-            //  Define destination field values
+            //  Define destination field values (different for every action)
             $destFieldValues = [
-                "session_owner_id" => $owner_id,
-                "session_project_id" => $tracking_project,
+                "session_owner_id" => $tracking->owner,
+                "session_project_id" => $tracking->project,
                 "session_device_state" => 1,
                 "session_assign_date" => date("Y-m-d")
             ];
 
-            //  to do: additional fields that are being piped
             $nextInstanceId = $currentInstanceId + 1;
-            $data_p = [$device_id => ["repeat_instances" => [$this->devices_event_id => ["sessions" => [$nextInstanceId => $destFieldValues]]]]];       
+            $data_p = [$tracking->device => ["repeat_instances" => [$this->devices_event_id => ["sessions" => [$nextInstanceId => $destFieldValues]]]]];       
             
             $params_p = [
                 'project_id' => $this->devices_project_id,
@@ -174,18 +190,22 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
              */
 
             //  Get tracking project data fields
-            $currentTrackingValue = $this->getCurrentTrackingInfo($tracking_project, $tracking_field, $owner_id);
+            $currentTrackingValue = $this->getCurrentTrackingInfo($tracking->project, $tracking->field, $tracking->owner);
             if(!empty($currentTrackingValue)) {
                 throw new Exception("Invalid current tracking field. Expected NULL found: " . $currentTrackingValue);
             }
 
-            // save tracking
-            $trackingProject = new \Project( $tracking_project );
-            $trackingEventId = $trackingProject->firstEventId;
+            // save tracking field  data
 
-            $data_t = [$owner_id => [$trackingEventId => [ $tracking_field => $device_id]]];
+            //  to do: additional fields that are being piped (different for every action)
+            //  scenario: user can add additional fields over module settings (text, date) which will be rendered
+            //  into action-modal. Any entry will be retrieved through ajax (no strict validation) and piped into
+            //  relevant tracking project fields. Mechanism to save data will first take ajax params, fetch settings
+            //  match them and finally run a getAdditionalFieldData() method               
+
+            $data_t = [$tracking->owner => [$tracking->event => [ $tracking->field => $tracking->device]]];
             $params_t = [
-                'project_id' => $tracking_project,
+                'project_id' => $tracking->project,
                 'data' => $data_t
             ];
 
@@ -193,7 +213,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Check if there were any errors during save and throw error
             if(count($saved_t["errors"]) !== 0) {
                 throw new Exception(implode(", ", $saved_t["errors"]));
-            }
+            }         
 
             /**
              * Commit Transaction
@@ -210,7 +230,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         }
 
         $response = array(
-            "tracking_project" => $tracking_project,
+            "tracking" => $tracking,
             "devices_project" => $this->devices_project_id,
             "saved_devices" => $saved_p,
             "saved_tracking" => $saved_t
@@ -244,18 +264,21 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
     /**
      * Get Page Meta
+     * Used during Vue Instance rendering
      * 
+     * @since 1.0.0
      */
     private function getPageMeta() {
         return array(
             "project_id" => $_GET["pid"],
             "record_id"  => $_GET["id"],
-            "page_name"  => $_GET["page"]
+            "page_name"  => $_GET["page"],
+            "event_id"   => $_GET["event_id"]
         );
     }
 
     /**
-     * Get trackings in usefull structure
+     * Get trackings in useful structure
      * 
      * @since 1.0.0
      */
@@ -269,7 +292,11 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return $trackings;
     }
 
-    private function getDeviceTypes(string $field) :array {
+    /**
+     * Get device types
+     * Return a list of devices types that are defined in field setting
+     */
+    private function getDeviceTypesForField(string $field) :array {
         $trackings = $this->getSubSettings('trackings');
         foreach ($trackings as $key => $settings) {
             if($settings['tracking-field'] == $field) {
@@ -281,6 +308,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return [];
     }
 
+    /**
+     * Get available devices
+     * Get a list of all available devices by filtering through session_device_state
+     * 
+     * @since 1.0.0
+     */
     public function getAvailableDevices(array $types=[]) :array {
 
         //  General filter logic
@@ -314,6 +347,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return REDCap::getData($params);
     }
 
+    /**
+     * Get field meta
+     * Used to define field state and render appropriate views
+     * 
+     * @since 1.0.0
+     */
     private function getFieldMeta($fields) {
 
          $response = array();

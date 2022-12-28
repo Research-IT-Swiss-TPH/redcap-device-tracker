@@ -120,9 +120,12 @@
             this.axios({
                     params: {
                         action: 'assign-device',
-                        device_id: this.userInput,
+                        //  REDCap automatically appends pid to every async GET request, so we do not need to send it
+                        event_id: this.page.event_id,
                         owner_id: this.page.record_id,
-                        tracking_field: this.field.name
+                        field_id: this.field.name,
+                        device_id: this.userInput,
+                        extra: "TO DO"
                     }
                 })
                 .then( response => {

@@ -17,7 +17,16 @@ if ($_REQUEST['action'] == 'assign-device') {
         header('Content-Type: application/json; charset=UTF-8');    
         die("Invalid parameters."); 
     }
-    $module->assignDevice($_GET["device_id"], $_GET["tracking_field"], $_GET["owner_id"], $_GET["pid"]);
+    $tracking = (object) [
+        "project"=> $_GET["pid"],
+        "event"  => $_GET["event_id"],
+        "owner"  => $_GET["owner_id"],
+        "field"  => $_GET["field_id"],
+        "device" => $_GET["device_id"],
+        "extra"  => $_GET["extra"]
+    ];
+
+    $module->assignDevice($tracking);
 }
 
 
