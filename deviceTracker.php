@@ -6,7 +6,8 @@ use Exception;
 use REDCap;
 use ExternalModules\ExternalModules;
 require __DIR__ . '/vendor/autoload.php';
-require_once('classes/tracking.class.php');
+
+if (!class_exists("Tracking")) require_once("classes/tracking.class.php");
 
 // Declare your module class, which must extend AbstractExternalModule 
 class deviceTracker extends \ExternalModules\AbstractExternalModule {    
@@ -134,43 +135,15 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
              * 
              */
 
-            //  Define data values (different for every action)
-            if($action == "assign") {
-                $dataValues_d = [
-                    "session_owner_id" => $tracking->owner,
-                    "session_project_id" => $tracking->project,
-                    "session_device_state" => 1,
-                    "session_assign_date" => date("Y-m-d")
-                ];
-                $targetInstanceId = $currentInstanceId + 1;
-            }
-
-            if($action == "return") {
-                $dataValues_d = [
-                    "session_device_state" => 2,
-                    "session_return_date" => date("Y-m-d")
-                ];
-                $targetInstanceId = $currentInstanceId;
-            }
-
-            if($action == "reset") {
-                $dataValues_d = [
-                    "session_device_state" => 0,
-                    "session_reset_date" => date("Y-m-d")
-                ];
-                $targetInstanceId = $currentInstanceId;
-            }
-
-            //  Perform actual saving
-            $data_d = [$tracking->device => ["repeat_instances" => [$this->devices_event_id => ["sessions" => [$targetInstanceId => $dataValues_d]]]]];
+            //  Prepare parameters for actual saving
             $params_d = [
                 'project_id' => $this->devices_project_id,
-                'data' => $data_d
+                'data' => $tracking->getDataDevices($action, $currentInstanceId, $this->devices_event_id)
             ];
-
+            //  Perform actual saving
             $saved_d = REDCap::saveData($params_d);
 
-            //  Check if there were any errors during save and throw error
+            //  Throw error if there were errors during save
             if(count($saved_d["errors"]) !== 0) {
                 throw new Exception(implode(", ", $saved_d["errors"]));
             }
@@ -198,11 +171,11 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Perform actual save only if we have data for the specific action to be saved
             if($action == 'assign' || $action != 'assign' && $hasExtra) {
                 $data_t = [ $tracking->owner => [$tracking->event => $dataValues_t ] ];
+                
                 $params_t = [
                     'project_id' => $tracking->project,
                     'data' => $data_t
                 ];
-    
                 $saved_t = REDCap::saveData($params_t);
 
                 //  Check if there were any errors during save and throw error

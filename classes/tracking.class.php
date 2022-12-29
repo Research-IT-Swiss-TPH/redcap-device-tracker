@@ -29,4 +29,50 @@ class Tracking {
         }
     }
 
+    /**
+     * Prepare data to save into devices project
+     * 
+     * 
+     */
+    public function getDataDevices($action, $instance, $event) {
+        if($action == "assign") {
+            $values = [
+                "session_owner_id" => $this->owner,
+                "session_project_id" => $this->project,
+                "session_device_state" => 1,
+                "session_assign_date" => date("Y-m-d")
+            ];
+            $instance++;
+        }
+
+        if($action == "return") {
+            $values = [
+                "session_device_state" => 2,
+                "session_return_date" => date("Y-m-d")
+            ];
+        }
+
+        if($action == "reset") {
+            $values = [
+                "session_device_state" => 0,
+                "session_reset_date" => date("Y-m-d")
+            ];
+        }
+
+        //  Format array for REDCap::save()
+        $data = [
+            $this->device => [
+                "repeat_instances" => [
+                    $event => [
+                        "sessions" => [
+                            $instance => $values
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        return $data;
+    }
+
 }
