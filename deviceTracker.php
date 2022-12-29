@@ -6,7 +6,7 @@ use Exception;
 use REDCap;
 use ExternalModules\ExternalModules;
 require __DIR__ . '/vendor/autoload.php';
-
+require_once('classes/tracking.class.php');
 
 // Declare your module class, which must extend AbstractExternalModule 
 class deviceTracker extends \ExternalModules\AbstractExternalModule {    
@@ -34,8 +34,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     *
     * @since 1.0.0
     */
-    public function redcap_every_page_top($project_id = null) {     
-
+    public function redcap_every_page_top($project_id = null) {   
+        
         //  Init
         $this->trackings = $this->getTrackings();
 
@@ -89,6 +89,168 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
     }
 
+    public function handleTracking(String $action, Tracking $tracking) {
+        
+        try {
+            //  Begin database transaction
+            $this->beginDbTx();
+
+            //  Retrieve current device instance info
+            list($currentInstanceId, $currentInstanceState) = $this->getCurrentDeviceInfo($tracking->device);
+            //  Do checks (different for every action)
+            if($action == 'assign') {
+                if( ($currentInstanceId == 0 && $currentInstanceState != NULL) || $currentInstanceId != 0 && $currentInstanceState != 0) {
+                    throw new Exception ("Invalid current instance state. Expected 0, found: " . $currentInstanceId);
+                }
+            }
+
+            if($action == 'return') {
+                if( $currentInstanceState != 1) {
+                    throw new Exception ("Invalid current instance state. Expected 1, found: " . $currentInstanceId);
+                }
+            }
+
+            if($action == 'reset') {
+                if( $currentInstanceState != 2) {
+                    throw new Exception ("Invalid current instance state. Expected 2, found: " . $currentInstanceId);
+                }                
+            }
+
+            //  Retrieve tracking info
+            $currentTrackingValue = $this->getCurrentTrackingInfo($tracking->project, $tracking->field, $tracking->owner);
+            //  Do checks (different for every action)
+            if($action == 'assign') {
+                if(!empty($currentTrackingValue)) {
+                    throw new Exception("Invalid current tracking field. Expected NULL found: " . $currentTrackingValue);
+                }
+            } else {
+                if($currentTrackingValue != $tracking->device) {
+                    throw new Exception("Invalid current tracking field. Expected ".$tracking->device." found: " . $currentTrackingValue);
+                } 
+            }
+
+            /**
+             * 1. Save data to devices project
+             * 
+             */
+
+            //  Define data values (different for every action)
+            if($action == "assign") {
+                $dataValues_d = [
+                    "session_owner_id" => $tracking->owner,
+                    "session_project_id" => $tracking->project,
+                    "session_device_state" => 1,
+                    "session_assign_date" => date("Y-m-d")
+                ];
+                $targetInstanceId = $currentInstanceId + 1;
+            }
+
+            if($action == "return") {
+                $dataValues_d = [
+                    "session_device_state" => 2,
+                    "session_return_date" => date("Y-m-d")
+                ];
+                $targetInstanceId = $currentInstanceId;
+            }
+
+            if($action == "reset") {
+                $dataValues_d = [
+                    "session_device_state" => 0,
+                    "session_reset_date" => date("Y-m-d")
+                ];
+                $targetInstanceId = $currentInstanceId;
+            }
+
+            //  Perform actual saving
+            $data_d = [$tracking->device => ["repeat_instances" => [$this->devices_event_id => ["sessions" => [$targetInstanceId => $dataValues_d]]]]];
+            $params_d = [
+                'project_id' => $this->devices_project_id,
+                'data' => $data_d
+            ];
+
+            $saved_d = REDCap::saveData($params_d);
+
+            //  Check if there were any errors during save and throw error
+            if(count($saved_d["errors"]) !== 0) {
+                throw new Exception(implode(", ", $saved_d["errors"]));
+            }
+            
+            /**
+             * 2. Save data to tracking project
+             * 
+             */
+
+            //  to do: additional fields that are being piped (different for every action)
+            //  scenario: user can add additional fields over module settings (text, date) which will be rendered
+            //  into action-modal. Any entry will be retrieved through ajax (no strict validation) and piped into
+            //  relevant tracking project fields. Mechanism to save data will first take ajax params, fetch settings
+            //  match them and finally run a getAdditionalFieldData() method 
+            //  also use flag: $hasExtra = false;
+            $hasExtra = false;
+
+            if($action == 'assign') {
+                //  add additional values here...
+                $dataValues_t = [
+                    $tracking->field => $tracking->device
+                ];
+            }
+
+            //  Perform actual save only if we have data for the specific action to be saved
+            if($action == 'assign' || $action != 'assign' && $hasExtra) {
+                $data_t = [ $tracking->owner => [$tracking->event => $dataValues_t ] ];
+                $params_t = [
+                    'project_id' => $tracking->project,
+                    'data' => $data_t
+                ];
+    
+                $saved_t = REDCap::saveData($params_t);
+
+                //  Check if there were any errors during save and throw error
+                if(count($saved_t["errors"]) !== 0) {
+                    throw new Exception(implode(", ", $saved_t["errors"]));
+                }                
+            }
+
+            //  End database transaction
+            $this->endDbTx();
+
+        } catch (\Throwable $th) {
+            //  Rollback database
+            $this->rollbackDbTx();
+            //  Handle Error
+            $this->sendError(500, $th->getMessage());            
+        }
+
+        $response = array(
+            "tracking" => $tracking,
+            "devices_project" => $this->devices_project_id,
+            "saved_devices" => $saved_d,
+            "saved_tracking" => $saved_t ?? []
+        );
+
+        $this->sendResponse($response);         
+    }
+
+    /**
+     * Use database transactions in case there is an error
+     * no data will be saved in any of the save procedures
+     * https://www.mysqltutorial.org/mysql-transaction.aspx
+     * 
+     */
+    private function beginDbTx() {    
+        $this->query("SET autocommit = 0;", []);
+        $this->query("START TRANSACTION;", []);
+    }
+
+    private function endDbTx() {
+        $this->query("COMMIT;", []);
+        $this->query("SET autocommit = 1;", []);
+    }
+
+    private function rollbackDbTx() {
+        $this->query("ROLLBACK;", []);
+    }
+
     /**
      * Get current device info
      * Returns current device instance number and state
@@ -117,129 +279,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 );
         return $result->fetch_object()->value;
     }
-
-    public function handleTracking($action, $tracking) {
-        
-    }
-
-    /**
-     * Assign Device
-     * Performs cross-project data saving to assign a device to tracking.
-     * 
-     * @since 1.0.0
-     */
-    public function assignDevice(object $tracking) {
-
-        /**
-         * Sequential data saving to REDCap 
-         * 
-         * 1. Save data to devices project - suffix: _p
-         * 2. Save data to tracking project - suffix: _t
-         * 
-         */
-
-        try {
-
-            /**
-             * Start transaction in case there is an error
-             * no data will be saved in any of the save procedures
-             * https://www.mysqltutorial.org/mysql-transaction.aspx
-             * 
-             */
-            $this->query("SET autocommit = 0;", []);
-            $this->query("START TRANSACTION;", []);
-
-            /**
-             * 1. Save data to devices project
-             * 
-             */  
-            
-            //  Retrieve device instance info
-            list($currentInstanceId, $currentInstanceState) = $this->getCurrentDeviceInfo($tracking->device);
-            //  Do state checks (different for every action)
-            if( ($currentInstanceId == 0 && $currentInstanceState != NULL) || $currentInstanceId != 0 && $currentInstanceState != 0) {
-                $this->sendError(400, "Invalid current instance state. Expected 0, found: " . $currentInstanceId);
-            }
-
-            //  Define destination field values (different for every action)
-            $destFieldValues = [
-                "session_owner_id" => $tracking->owner,
-                "session_project_id" => $tracking->project,
-                "session_device_state" => 1,
-                "session_assign_date" => date("Y-m-d")
-            ];
-
-            $nextInstanceId = $currentInstanceId + 1;
-            $data_p = [$tracking->device => ["repeat_instances" => [$this->devices_event_id => ["sessions" => [$nextInstanceId => $destFieldValues]]]]];       
-            
-            $params_p = [
-                'project_id' => $this->devices_project_id,
-                'data' => $data_p
-            ];
-
-            $saved_p = REDCap::saveData($params_p);
-
-            //  Check if there were any errors during save and throw error
-            if(count($saved_p["errors"]) !== 0) {
-                throw new Exception(implode(", ", $saved_p["errors"]));
-            }
-        
-            /**
-             * 2. Save data to tracking project
-             * 
-             */
-
-            //  Get tracking project data fields
-            $currentTrackingValue = $this->getCurrentTrackingInfo($tracking->project, $tracking->field, $tracking->owner);
-            if(!empty($currentTrackingValue)) {
-                throw new Exception("Invalid current tracking field. Expected NULL found: " . $currentTrackingValue);
-            }
-
-            // save tracking field  data
-
-            //  to do: additional fields that are being piped (different for every action)
-            //  scenario: user can add additional fields over module settings (text, date) which will be rendered
-            //  into action-modal. Any entry will be retrieved through ajax (no strict validation) and piped into
-            //  relevant tracking project fields. Mechanism to save data will first take ajax params, fetch settings
-            //  match them and finally run a getAdditionalFieldData() method               
-
-            $data_t = [$tracking->owner => [$tracking->event => [ $tracking->field => $tracking->device]]];
-            $params_t = [
-                'project_id' => $tracking->project,
-                'data' => $data_t
-            ];
-
-            $saved_t = REDCap::saveData($params_t);
-            //  Check if there were any errors during save and throw error
-            if(count($saved_t["errors"]) !== 0) {
-                throw new Exception(implode(", ", $saved_t["errors"]));
-            }         
-
-            /**
-             * Commit Transaction
-             * 
-             */
-
-            $this->query("COMMIT;", []);
-            $this->query("SET autocommit = 1;", []);
-
-        } catch (\Throwable $th) {
-            //  Rollback and report Error
-            $this->query("ROLLBACK;", []);
-            $this->sendError(500, $th->getMessage());
-        }
-
-        $response = array(
-            "tracking" => $tracking,
-            "devices_project" => $this->devices_project_id,
-            "saved_devices" => $saved_p,
-            "saved_tracking" => $saved_t
-        );
-
-        $this->sendResponse($response); 
-    }
-
-
+    
     /**
      * Hooks into redcap_module_configuration_settings
      *
