@@ -184,6 +184,17 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 }                
             }
 
+            $logId = $this->log(
+                "Tracking Action",
+                [
+                    "action"=> $action,
+                    "field"=> $tracking->field,
+                    "owner" => $tracking->owner,
+                    "instance" => $currentInstanceId,
+                    "date"  => date('d-m-Y'),
+                ]
+            );
+
             //  End database transaction
             $this->endDbTx();
 
@@ -469,10 +480,10 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                         //  Insert vue target
                         var target = $('tr#'+field_name+'-tr').find('input');
                         var wrapper = $('#STPH_DT_WRAPPER_' + field_name);
+                        var device = target.val();
                         target.parent().prepend(wrapper);
                         wrapper.show();
                         console.log(field_name + " prepended wrapper. Hiding.");
-
                     });
                 })
             });
