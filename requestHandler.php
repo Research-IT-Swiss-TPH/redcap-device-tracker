@@ -13,7 +13,7 @@ if ($_REQUEST['action'] == 'validate-device') {
     $module->validateDevice($_GET["device_id"], $_GET["tracking_field"]);
 } 
 
-if ($_REQUEST['action'] == 'assign-device') {
+if ($_REQUEST['action'] == 'assign-device' || $_REQUEST['action'] == 'return-device' || $_REQUEST['action'] == 'reset-device') {
 
     if(!isset($_GET["device_id"]) || !isset($_GET["field_id"]) || !isset($_GET["owner_id"])) {
         header("HTTP/1.1 400 Bad Request");
@@ -22,8 +22,9 @@ if ($_REQUEST['action'] == 'assign-device') {
     }
 
     try {
+        $action = $_REQUEST['action'];
         $tracking = new Tracking($_GET);
-        $module->handleTracking("assign", $tracking);
+        $module->handleTracking($action, $tracking);
     } catch(\Throwable $th ) {
         header("HTTP/1.1 400 Bad Request");
         header('Content-Type: application/json; charset=UTF-8');

@@ -99,19 +99,19 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Retrieve current device instance info
             list($currentInstanceId, $currentInstanceState) = $this->getCurrentDeviceInfo($tracking->device);
             //  Do checks (different for every action)
-            if($action == 'assign') {
+            if($action == 'assign-device') {
                 if( ($currentInstanceId == 0 && $currentInstanceState != NULL) || $currentInstanceId != 0 && $currentInstanceState != 0) {
                     throw new Exception ("Invalid current instance state. Expected 0, found: " . $currentInstanceId);
                 }
             }
 
-            if($action == 'return') {
+            if($action == 'return-device') {
                 if( $currentInstanceState != 1) {
                     throw new Exception ("Invalid current instance state. Expected 1, found: " . $currentInstanceId);
                 }
             }
 
-            if($action == 'reset') {
+            if($action == 'reset-device') {
                 if( $currentInstanceState != 2) {
                     throw new Exception ("Invalid current instance state. Expected 2, found: " . $currentInstanceId);
                 }                
@@ -120,7 +120,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Retrieve tracking info
             $currentTrackingValue = $this->getCurrentTrackingInfo($tracking->project, $tracking->field, $tracking->owner);
             //  Do checks (different for every action)
-            if($action == 'assign') {
+            if($action == 'assign-device') {
                 if(!empty($currentTrackingValue)) {
                     throw new Exception("Invalid current tracking field. Expected NULL found: " . $currentTrackingValue);
                 }
@@ -161,7 +161,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  also use flag: $hasExtra = false;
             $hasExtra = false;
 
-            if($action == 'assign') {
+            if($action == 'assign-device') {
                 //  add additional values here...
                 $dataValues_t = [
                     $tracking->field => $tracking->device
@@ -169,7 +169,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             }
 
             //  Perform actual save only if we have data for the specific action to be saved
-            if($action == 'assign' || $action != 'assign' && $hasExtra) {
+            if($action == 'assign-device' || $action != 'assign' && $hasExtra) {
                 $data_t = [ $tracking->owner => [$tracking->event => $dataValues_t ] ];
                 
                 $params_t = [
