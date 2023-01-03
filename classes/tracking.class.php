@@ -35,7 +35,7 @@ class Tracking {
      * 
      */
     public function getDataDevices($action, $instance, $event) {
-        if($action == "assign") {
+        if($action == "assign-device") {
             $values = [
                 "session_owner_id" => $this->owner,
                 "session_project_id" => $this->project,
@@ -45,14 +45,14 @@ class Tracking {
             $instance++;
         }
 
-        if($action == "return") {
+        if($action == "return-device") {
             $values = [
                 "session_device_state" => 2,
                 "session_return_date" => date("Y-m-d")
             ];
         }
 
-        if($action == "reset") {
+        if($action == "reset-device") {
             $values = [
                 "session_device_state" => 0,
                 "session_reset_date" => date("Y-m-d")

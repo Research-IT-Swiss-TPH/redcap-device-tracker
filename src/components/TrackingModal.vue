@@ -182,22 +182,21 @@
                         event_id: this.page.event_id,
                         owner_id: this.page.record_id,
                         field_id: this.field.name,
-                        device_id: this.userInput,
+                        device_id: this.field.device,
                         extra: "TO DO"
                     }
                 })
                 .then( response => {
                     console.log(response.data)
                     //this.device_id = response.data.device_id;
-                    this.isAssigning = false
-                    this.isDeviceAssigned = true
+                    this.isReturning = false
+                    this.isDeviceReturned = true
                 })
                 .catch(e => {
                     //this.isValidDevice = false
                     this.hasActionError = true
-                    this.isAssigning = false
-                    this.actionErrorMessage = e.message
-                    //console.log(e.message)
+                    this.isReturning = false
+                    this.actionErrorMessage = e.message + ": " + e.response.data
                 })
         },
         complete() {
