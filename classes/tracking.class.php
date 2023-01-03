@@ -15,11 +15,11 @@ class Tracking {
     public function __construct($request = []) {
         if(!empty($request) && is_array($request)) {
 
-            $this->project = $request["pid"];
-            $this->event = $request["event_id"];
-            $this->owner = $request["owner_id"];
-            $this->field = $request["field_id"];
-            $this->device = $request["device_id"];
+            $this->project  = htmlentities($request["pid"], ENT_QUOTES, 'UTF-8');
+            $this->event    = htmlentities($request["event_id"], ENT_QUOTES, 'UTF-8');
+            $this->owner    = htmlentities($request["owner_id"], ENT_QUOTES, 'UTF-8');
+            $this->field    = htmlentities($request["field_id"], ENT_QUOTES, 'UTF-8');
+            $this->device   = htmlentities($request["device_id"], ENT_QUOTES, 'UTF-8');
 
             if(!empty($request["extra"]) && is_array(json_decode($_GET["extra"]))) {
                 $this->extra = json_decode($request["extra"]);
