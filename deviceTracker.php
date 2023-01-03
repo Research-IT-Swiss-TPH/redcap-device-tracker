@@ -386,8 +386,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $fieldMeta = array();
             
             $params = [
-                'project_id'=> $_GET["project_id"], 
-                'records'=>$_GET["id"],
+                'project_id'    => htmlentities($_GET["project_id"], ENT_QUOTES, 'UTF-8'), 
+                'records' => htmlentities($_GET["id"], ENT_QUOTES, 'UTF-8'),
                 'fields' => $field,
                 'return_format' => 'json'
             ];
