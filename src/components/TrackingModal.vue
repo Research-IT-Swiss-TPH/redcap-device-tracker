@@ -7,7 +7,8 @@
         title="Device Tracker" >
             <div v-if="isActionInit">
                 <div v-if="modalMode == 'assign'">
-                    <b-alert show variant="info"><b>Assign device:</b> <br/>Please insert a valid device ID to process assignment. You can approve the assignment with a valid device only.</b-alert>
+                    <b-alert show variant="info"><b>Assign device:</b> 
+                        <br/>Please insert a valid device ID to process assignment. You can approve the assignment with a valid device only.</b-alert>
                     <b-form >
                         <b-form-group>
                             <b-input-group class="mt-3">
@@ -43,38 +44,52 @@
                             </b-input-group>   
                         </b-form-group>
                         <b-form-group>
-                            <b-button v-if="!isDeviceAssigned" :disabled="!isValidDevice" size="lg" block  class="btn-primaryrc" @click="assignDevice()">
-                                <span v-if="!isAssigning">Approve</span>
+                            <b-button :disabled="!isValidDevice" size="lg" block  class="btn-primaryrc" @click="processAction()">
+                                <span v-if="!isProcessing">Approve</span>
                                 <b-spinner v-else></b-spinner>
                             </b-button>             
                         </b-form-group>              
                     </b-form>
                 </div>
                 <div v-else-if="modalMode == 'return' ">
-                    <b-alert show variant="info"><b>Return device:</b> <br/>By approving you will set the device state of device <b></b>to returned.</b-alert>
+                    <b-alert show variant="info"><b>Return device:</b>
+                        <br/>By approving you will set the device state of device <b>{{deviceId}}</b> to "returned".</b-alert>
                     <b-form >
                         <b-form-group>
-                            <b-button size="lg" block  class="btn-primaryrc" @click="returnDevice()">
-                                <span v-if="!isReturning">Approve</span>
+                            <b-button size="lg" block  class="btn-primaryrc" @click="processAction()">
+                                <span v-if="!isProcessing">Approve</span>
                                 <b-spinner v-else></b-spinner>
                             </b-button>
                         </b-form-group>
                     </b-form>
                 </div>
+                <div v-else-if="modalMode == 'reset' ">
+                    <b-alert show variant="info"><b>Reset device:</b> 
+                        <br/>By approving you will set the device state of device <b>{{deviceId}}</b> to "reset".</b-alert>
+                    <b-form >
+                        <b-form-group>
+                            <b-button size="lg" block  class="btn-primaryrc" @click="processAction()">
+                                <span v-if="!isProcessing">Approve</span>
+                                <b-spinner v-else></b-spinner>
+                            </b-button>
+                        </b-form-group>
+                    </b-form>
+                </div>                
             </div>
             <div v-else>
                <sweet-alert 
-                :device="device_id" 
+                :action="modalMode"
+                :device="deviceId" 
                 :field="field.name" 
                 :error="actionErrorMessage"
                 />
             </div>
         <!-- Default Footer for all modes -->
         <template #modal-footer="{ ok, cancel, hide }">
-            <b-button v-if="!isDeviceAssigned" :disabled="isAssigning" @click="cancel()">
+            <b-button v-if="isActionInit" :disabled="isProcessing" @click="cancel()">
                 Cancel
             </b-button>
-            <b-button v-if="isDeviceAssigned" class="btn-primaryrc" @click="complete()">
+            <b-button v-if="!isActionInit" class="btn-primaryrc" @click="complete()">
                 Complete 
             </b-button>
         </template>
@@ -90,6 +105,7 @@
     },
     data() {
         return {
+            isProcessing: false,
             //  Action Results
             isDeviceAssigned: false,
             isDeviceReturned: false,
@@ -97,20 +113,10 @@
             //  Error Handlers
             hasActionError: false,
             actionErrorMessage: "",
-
-            //  Action 'assign'
+            //  Validation helpers during action 'assign'
             userInput: "",
             isValidDevice: null,
-            isValidating: false,
-            isAssigning: false,
-            device_id: "",
-
-            //  Action 'return'
-            isReturning: false,
-
-            //  Action 'reset'
-            isReseting: false
-
+            isValidating: false
         }
     },
     props: {
@@ -132,7 +138,7 @@
                     }
                 })
                 .then( response => {
-                    this.device_id = response.data.device_id;
+                    //this.device_id = response.data.device_id;
                     document.activeElement.blur();
                     this.isValidDevice = true
                 })
@@ -146,63 +152,52 @@
             }
             
         },
-        async assignDevice() {
-            this.isAssigning = true
+
+        async processAction() {
+            this.isProcessing = true
             this.axios({
-                    params: {
-                        action: 'assign-device',
-                        //  REDCap automatically appends pid to every async GET request, so we do not need to send it
+                params: {                        
+                        action: this.modalMode + '-device',
+                        //  pid
+                        //  REDCap automatically appends pid to every async GET request, 
+                        //  so we do not need to specifically send it
                         event_id: this.page.event_id,
                         owner_id: this.page.record_id,
                         field_id: this.field.name,
-                        device_id: this.userInput,
+                        device_id: this.deviceId,
                         extra: "TO DO"
                     }
                 })
-                .then( response => {
-                    console.log(response.data)
-                    //this.device_id = response.data.device_id;
-                    this.isAssigning = false
-                    this.isDeviceAssigned = true
+                .then(() => {
+                    this.setProcessSuccess()
                 })
                 .catch(e => {
-                    //this.isValidDevice = false
                     this.hasActionError = true
-                    this.isAssigning = false
+                    //this.error = e
                     this.actionErrorMessage = e.message
-                    //console.log(e.message)
+                })
+                .finally(()=>{
+                    this.isProcessing = false
                 })
         },
-        async returnDevice() {
-            this.isReturning = true
-            this.axios({
-                    params: {
-                        action: 'return-device',
-                        //  REDCap automatically appends pid to every async GET request, so we do not need to send it
-                        event_id: this.page.event_id,
-                        owner_id: this.page.record_id,
-                        field_id: this.field.name,
-                        device_id: this.field.device,
-                        extra: "TO DO"
-                    }
-                })
-                .then( response => {
-                    console.log(response.data)
-                    //this.device_id = response.data.device_id;
-                    this.isReturning = false
-                    this.isDeviceReturned = true
-                })
-                .catch(e => {
-                    //this.isValidDevice = false
-                    this.hasActionError = true
-                    this.isReturning = false
-                    this.actionErrorMessage = e.message + ": " + e.response.data
-                })
+
+        setProcessSuccess() {
+            if(this.modalMode == 'assign') {
+                this.isDeviceAssigned = true
+            }
+            if(this.modalMode == 'return') {
+                this.isDeviceReturned = true
+            }
+            if(this.modalMode == 'reset') {
+                this.isDeviceReset = true
+            }
         },
+
         complete() {
             location.reload()
         },
-        resetModal: function() {
+
+        resetModal() {
             this.userInput = ""
             this.isValidDevice = null
             this.hasActionError = false
@@ -220,6 +215,7 @@
                 return "reset"
             }
         },
+        
         isActionInit: function() {
             if(this.modalMode == "assign" && !this.isDeviceAssigned && !this.hasActionError) {
                 return true
@@ -231,6 +227,14 @@
                 return true
             }
             else return false
+        },
+
+        deviceId: function() {
+            if(this.modalMode == 'assign') {
+                return this.userInput
+            } else {
+                return this.field.device
+            }
         }
     },
     watch: {

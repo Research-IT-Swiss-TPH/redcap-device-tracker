@@ -9,9 +9,16 @@
                 <div class="swal2-success-fix" style="background-color: rgb(255, 255, 255);"></div>
                 <div class="swal2-success-circular-line-right" style="background-color: rgb(255, 255, 255);"></div>
             </div>
-            <h2 class="swal2-title" id="swal2-title" style="display: block;">Device assigned</h2>
-            <div class="swal2-html-container text-center" id="swal2-html-container" style="display: block;">
+            <h2 class="swal2-title" id="swal2-title" style="display: block;">Success</h2>
+            <div  v-if="action=='assign'" class="swal2-html-container text-center" id="swal2-html-container" style="display: block;">
                 The device with id {{device}} has been assigned to field {{field}}.
+            </div>
+            <div  v-if="action=='return'" class="swal2-html-container text-center" id="swal2-html-container" style="display: block;">
+                The device with id {{device}} has been returned.
+            </div>
+
+            <div  v-if="action=='reset'" class="swal2-html-container text-center" id="swal2-html-container" style="display: block;">
+                The device with id {{device}} has been reset.
             </div>
         </div>
         <div v-else>
@@ -33,6 +40,7 @@
     export default {
         name: "SweetAlert",
         props: {
+            action: String,
             device: String,
             field: String,
             error: String
