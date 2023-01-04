@@ -9,9 +9,12 @@ $pseudoSql = "select log_id, message, user, action, field, owner, instance where
 $parameters = ['Tracking Action'];
 
 $result = $module->queryLogs($pseudoSql, $parameters);
+$logs = [];
 while($row = $result->fetch_assoc()){
-    dump($row);
+    $logs[] = $row;
 }
+
+dump($logs);
 
 // $fieldName = "device_type";
 // $pid = 15;

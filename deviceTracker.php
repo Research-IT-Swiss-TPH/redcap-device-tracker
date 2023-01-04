@@ -5,13 +5,19 @@ namespace STPH\deviceTracker;
 use Exception;
 use REDCap;
 use ExternalModules\ExternalModules;
-require __DIR__ . '/vendor/autoload.php';
 
+//  used for development
+if( file_exists("vendor/autoload.php") ){
+    require 'vendor/autoload.php';
+}
+
+//  require tracking class
 if (!class_exists("Tracking")) require_once("classes/tracking.class.php");
 
 // Declare your module class, which must extend AbstractExternalModule 
 class deviceTracker extends \ExternalModules\AbstractExternalModule {    
 
+    private $trackings;
     private $devices_project_id;
     private $devices_event_id;
 
@@ -43,29 +49,13 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         //  Check if Data Entry Page and record id is defined
         if($this->isPage('DataEntry/index.php') && isset( $_GET['id']) && defined('USERID')) {
 
-            // $args_test = array(
-            //     'return_format' => 'array', 
-            //     'project_id' => $_GET["pid"],
-            //     'records' => $_GET["id"],
-            //     'fields' => [],
-            //     'exportDataAccessGroups' => true   
-            // );
-            // $data_test = REDCap::getData($args_test);
-            // dump($data_test);
-
             //  Check if is form page and has tracking fields
             if($_GET["page"] && in_array($_GET["page"], array_keys($this->trackings))) {
                 
                 //  Include Javascript             
                 $this->includeJavascript($this->trackings[$_GET["page"]], $_GET["id"]);
             }
-
         }
-
-        //  for dev only
-        // if($this->isPage('DataEntry/index.php') && $_GET["pid"] == $this->getDevicesProject()) {
-        //     dump($this->getDevicesProjectFields($_GET["id"]));
-        // }
     }
 
     /**

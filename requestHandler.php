@@ -2,17 +2,10 @@
 /** @var \STPH\deviceTracker\deviceTracker $module */
 namespace STPH\deviceTracker;
 
+//  Require tracking class
 if (!class_exists("Tracking")) require_once("classes/tracking.class.php");
 
-if ($_REQUEST['action'] == 'validate-device') {
-    if(!isset($_GET["device_id"]) || !isset($_GET["tracking_field"])) {
-        header("HTTP/1.1 400 Bad Request");
-        header('Content-Type: application/json; charset=UTF-8');    
-        die("Invalid parameters."); 
-    }
-    $module->validateDevice($_GET["device_id"], $_GET["tracking_field"]);
-} 
-
+//  Action handlers
 if ($_REQUEST['action'] == 'assign-device' || $_REQUEST['action'] == 'return-device' || $_REQUEST['action'] == 'reset-device') {
 
     if(!isset($_GET["device_id"]) || !isset($_GET["field_id"]) || !isset($_GET["owner_id"])) {
@@ -30,9 +23,19 @@ if ($_REQUEST['action'] == 'assign-device' || $_REQUEST['action'] == 'return-dev
         header('Content-Type: application/json; charset=UTF-8');
         die($th->getMessage());
     }
-
 }
 
+//  Validation handler
+if ($_REQUEST['action'] == 'validate-device') {
+    if(!isset($_GET["device_id"]) || !isset($_GET["tracking_field"])) {
+        header("HTTP/1.1 400 Bad Request");
+        header('Content-Type: application/json; charset=UTF-8');    
+        die("Invalid parameters."); 
+    }
+    $module->validateDevice($_GET["device_id"], $_GET["tracking_field"]);
+} 
+
+//  Error handler
 else {
     header("HTTP/1.1 400 Bad Request");
     header('Content-Type: application/json; charset=UTF-8');    
