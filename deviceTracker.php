@@ -53,7 +53,10 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             if($_GET["page"] && in_array($_GET["page"], array_keys($this->trackings))) {
                 
                 //  Include Javascript             
-                $this->includeJavascript($this->trackings[$_GET["page"]], $_GET["id"]);
+                $this->includeJavascript(
+                    $this->trackings[htmlentities($_GET["page"], ENT_QUOTES)], 
+                    htmlentities($_GET["id"], ENT_QUOTES)
+                );
             }
         }
     }
@@ -284,10 +287,10 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     private function getPageMeta() {
         return array(
-            "project_id" => $_GET["pid"],
-            "record_id"  => $_GET["id"],
-            "page_name"  => $_GET["page"],
-            "event_id"   => $_GET["event_id"]
+            "project_id" => htmlentities($_GET["pid"],ENT_QUOTES),
+            "record_id"  => htmlentities($_GET["id"], ENT_QUOTES),
+            "page_name"  => htmlentities($_GET["page"], ENT_QUOTES),
+            "event_id"   => htmlentities($_GET["event_id"], ENT_QUOTES)
         );
     }
 
