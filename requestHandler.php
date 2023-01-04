@@ -32,7 +32,10 @@ if ($_REQUEST['action'] == 'validate-device') {
         header('Content-Type: application/json; charset=UTF-8');    
         die("Invalid parameters."); 
     }
-    $module->validateDevice($_GET["device_id"], $_GET["tracking_field"]);
+    $module->validateDevice(
+        htmlentities($_GET["device_id"], ENT_QUOTES), 
+        htmlentities($_GET["tracking_field"], ENT_QUOTES)
+    );
 } 
 
 //  Error handler
