@@ -293,6 +293,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     private function getPageMeta() {
         return array(
+            "path"       => PAGE_FULL,
             "project_id" => htmlentities($_GET["pid"],ENT_QUOTES),
             "record_id"  => htmlentities($_GET["id"], ENT_QUOTES),
             "page_name"  => htmlentities($_GET["page"], ENT_QUOTES),
@@ -370,13 +371,50 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return REDCap::getData($params);
     }
 
+    private function testFieldMeta($fields, $record_id) {
+
+        $response = array();
+
+        foreach ($fields as $key => $field) {
+            $fieldMeta = array();
+            $params = [
+                'project_id'    => htmlentities($_GET["project_id"], ENT_QUOTES, 'UTF-8'), 
+                'records' => htmlentities($_GET["id"], ENT_QUOTES, 'UTF-8'),
+                'fields' => $field,
+                'return_format' => 'json'
+            ];
+            $device_id = reset(json_decode(REDCap::getData($params), true))[$field];
+
+            //  Get session_device_state
+            //  We have to match with session_owner_id otherwise it will not be clear which instance we are looking into!
+            //  First match by owner
+
+            $params = array(
+                'project_id' => $this->getSystemSetting("devices-project"),
+                'records' => [$device_id],
+                'filterLogic' => '[session_owner_id] = '.$record_id,
+                'fields'=>array('session_device_state'),
+                'return_format' => 'json'
+             );
+             $device_session_state = reset(json_decode(REDCap::getData($params), true))['session_device_state'];
+
+
+            $fieldMeta["device"] = $device_id;
+            $fieldMeta["state"] = $device_session_state;
+            $response[] = $fieldMeta;
+        }
+
+        return $response;
+
+    }
+
     /**
      * Get field meta
      * Used to define field state and render appropriate views
      * 
      * @since 1.0.0
      */
-    private function getFieldMeta($fields) {
+    private function getFieldMeta($fields, $record_id) {
 
          $response = array();
 
@@ -384,10 +422,13 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
          foreach ($fields as $key => $field) {
             $fieldMeta = array();
             $device_id_valid = "";
+            $device_id = "";
+            $device_state = "";
+            $device_session_state = null;
 
             $params = [
                 'project_id'    => htmlentities($_GET["project_id"], ENT_QUOTES, 'UTF-8'), 
-                'records' => htmlentities($_GET["id"], ENT_QUOTES, 'UTF-8'),
+                'records' => $record_id,
                 'fields' => $field,
                 'return_format' => 'json'
             ];
@@ -414,6 +455,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                     $params = array(
                         'project_id' => $this->getSystemSetting("devices-project"),
                         'records' => [$device_id],
+                        'filterLogic' => '[session_owner_id] = '.$record_id,
                         'fields'=>array('session_device_state'),
                         'return_format' => 'json'
                      );
@@ -520,6 +562,10 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             }
             const stph_dt_getFieldMetaFromBackend = function() {
                 return <?= json_encode($this->getFieldMeta($tracking_fields, $record_id)) ?>
+            }
+
+            const stph_dt_getTest = function() {
+                return <?= json_encode($this->testFieldMeta($tracking_fields, $record_id)) ?>
             }
 
             const stph_dt_getPageMetaFromBackend = function() {

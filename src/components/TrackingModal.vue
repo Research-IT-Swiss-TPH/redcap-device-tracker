@@ -194,7 +194,10 @@
         },
 
         complete() {
-            location.reload()
+            //  We need to construct URL explicit, since in some cases REDCap adds an "auto" url parameters which seems broken..
+            const loc = document.location
+            let dest = loc.protocol + '//' + loc.host + this.page.path + '?pid='+ this.page.project_id +'&id='+this.page.record_id+'&event_id='+this.page.event_id+'&page='+this.page.page_name            
+            location.href= dest
         },
 
         resetModal() {

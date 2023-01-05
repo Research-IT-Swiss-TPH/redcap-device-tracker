@@ -5,8 +5,8 @@ namespace STPH\deviceTracker;
 //dump($module->trackings);
 //dump($module->getAvailableDevices([1,2,3]));
 
-$pseudoSql = "select log_id, message, user, action, field, owner, instance where message = ?";
-$parameters = ['Tracking Action'];
+$pseudoSql = "select log_id, message, date,  user, action, field, record, instance where message = ?";
+$parameters = ['tracking-action']; 
 
 $result = $module->queryLogs($pseudoSql, $parameters);
 $logs = [];
@@ -33,12 +33,12 @@ foreach ($logs as $key => $log) {
 
     echo '<tr scope="row">';
     echo "<td>".$log->log_id."</td>";
-    echo "<td></td>";
+    echo "<td>".$log->date."</td>";
     echo "<td>".$log->message."</td>";
     echo "<td>".$log->action."</td>";
     echo "<td>".$log->user."</td>";
     echo "<td>".$log->field."</td>";
-    echo "<td>".$log->owner."</td>";
+    echo "<td>".$log->record."</td>";
     echo "<td>".$log->instance."</td>";
     echo "</tr>";
 }
