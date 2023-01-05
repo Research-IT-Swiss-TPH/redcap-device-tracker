@@ -5,7 +5,6 @@ Vue.config.productionTip = false
 
 //  Constants set via Backend
 var baseURL = stph_dt_getBaseUrlFromBackend();
-console.log(baseURL);
 var fields = stph_dt_getFieldMetaFromBackend();
 var page = stph_dt_getPageMetaFromBackend();
 
