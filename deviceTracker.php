@@ -30,8 +30,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         parent::__construct();
         //  validate module settings..
         //$this->trackings = $this->getTrackings();
-        $this->devices_project_id = $this->getSystemSetting("devices-project");
-        $this->devices_event_id = (new \Project( $this->devices_project_id ))->firstEventId;
+        //  Check if in project context, otherwise this will break during module enable/disable
+        if(defined('PROJECT_ID')) {
+            $this->devices_project_id = $this->getSystemSetting("devices-project");
+            $this->devices_event_id = (new \Project( $this->devices_project_id ))->firstEventId;
+        }
+
 
     }
 
