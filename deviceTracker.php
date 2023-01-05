@@ -186,7 +186,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                     "field"=> $tracking->field,
                     "record" => $tracking->owner,
                     "instance" => $currentInstanceId,
-                    "user" => "foo",
+                    "user" => $tracking->user,
                     "date"  => date('d-m-Y'),
                     "valid" =>  true
                 ]
@@ -206,7 +206,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             "tracking" => $tracking,
             "devices_project" => $this->devices_project_id,
             "saved_devices" => $saved_d,
-            "saved_tracking" => $saved_t ?? []
+            "saved_tracking" => $saved_t ?? [],
+            "log_id" => $logId
         );
 
         $this->sendResponse($response);         
@@ -295,7 +296,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             "project_id" => htmlentities($_GET["pid"],ENT_QUOTES),
             "record_id"  => htmlentities($_GET["id"], ENT_QUOTES),
             "page_name"  => htmlentities($_GET["page"], ENT_QUOTES),
-            "event_id"   => htmlentities($_GET["event_id"], ENT_QUOTES)
+            "event_id"   => htmlentities($_GET["event_id"], ENT_QUOTES),
+            "user_id"    => USERID
         );
     }
 

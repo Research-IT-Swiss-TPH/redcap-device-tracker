@@ -165,6 +165,7 @@
                         owner_id: this.page.record_id,
                         field_id: this.field.name,
                         device_id: this.deviceId,
+                        user_id: this.page.user_id,
                         extra: "TO DO"
                     }
                 })
