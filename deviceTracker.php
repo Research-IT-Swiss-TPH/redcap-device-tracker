@@ -178,13 +178,15 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             }
 
             $logId = $this->log(
-                "Tracking Action",
+                "tracking-action",
                 [
                     "action"=> $action,
                     "field"=> $tracking->field,
-                    "owner" => $tracking->owner,
+                    "record" => $tracking->owner,
                     "instance" => $currentInstanceId,
+                    "user" => "foo",
                     "date"  => date('d-m-Y'),
+                    "valid" =>  true
                 ]
             );
 
@@ -377,7 +379,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
          // 0. Loop through tracking_fields
          foreach ($fields as $key => $field) {
             $fieldMeta = array();
-            
+            $device_id_valid = "";
+
             $params = [
                 'project_id'    => htmlentities($_GET["project_id"], ENT_QUOTES, 'UTF-8'), 
                 'records' => htmlentities($_GET["id"], ENT_QUOTES, 'UTF-8'),
@@ -444,6 +447,30 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }
 
     /**
+     * Get Logs for a tracking/field pair
+     * 
+     */
+    public function getTrackingLogs($record, $field) {
+
+        $sql = "select log_id, message, user, action, field, date where message = ? AND record = ? AND field = ?";
+        $parameters = ['tracking-action', $record, $field];
+
+        $result = $this->queryLogs($sql, $parameters);
+        $logs = [];
+        while($row = $result->fetch_object()){
+            $entry = [
+                "action" => $row->action,
+                "date" => $row->date,
+                "user"=> $row->user
+            ];
+            $logs[] = $entry;
+        }
+
+        $this->sendResponse($logs);
+
+    }
+
+    /**
      * Include Javascript
      * 
      * @since 1.0.0
@@ -473,9 +500,10 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                         //  Insert vue target
                         var target = $('tr#'+field_name+'-tr').find('input');
                         var wrapper = $('#STPH_DT_WRAPPER_' + field_name);
-                        var device = target.val();
+                        //var device = target.val();
                         target.parent().prepend(wrapper);
                         wrapper.show();
+                        target.hide();
                         console.log(field_name + " prepended wrapper. Hiding.");
                     });
                 })

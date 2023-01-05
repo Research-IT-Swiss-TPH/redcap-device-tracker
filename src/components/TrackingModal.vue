@@ -99,7 +99,7 @@
   <script>
   import SweetAlert from './SweetAlert.vue'
   export default {
-    name: 'ModalAssign',
+    name: 'TrackingModal',
     components: {
         SweetAlert
     },

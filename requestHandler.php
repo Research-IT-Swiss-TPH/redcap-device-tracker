@@ -38,6 +38,19 @@ if ($_REQUEST['action'] == 'validate-device') {
     );
 } 
 
+//  Log Handler
+if ($_REQUEST['action'] == 'get-tracking-logs')  {
+    if(!isset($_GET["owner_id"]) || !isset($_GET["tracking_field"])) {
+        header("HTTP/1.1 400 Bad Request");
+        header('Content-Type: application/json; charset=UTF-8');    
+        die("Invalid parameters."); 
+    }
+    $module->getTrackingLogs(
+        htmlentities($_GET["owner_id"], ENT_QUOTES), 
+        htmlentities($_GET["tracking_field"], ENT_QUOTES)
+    );
+}
+
 //  Error handler
 else {
     header("HTTP/1.1 400 Bad Request");
