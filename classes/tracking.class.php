@@ -22,9 +22,10 @@ class Tracking {
             $this->field    = htmlentities($request["field_id"], ENT_QUOTES, 'UTF-8');
             $this->device   = htmlentities($request["device_id"], ENT_QUOTES, 'UTF-8');
             $this->user     = htmlentities($request["user_id"], ENT_QUOTES, 'UTF-8');
+            $this->extra = [];
 
-            if(!empty($request["extra"]) && is_array(json_decode($_GET["extra"]))) {
-                $this->extra = json_decode($request["extra"]);
+            if(!empty($request["extra"]) && is_array(json_decode($request["extra"], true))) {
+                $this->extra = json_decode($request["extra"], true);
             }
         } else {
             throw new Exception("Invalid Request");

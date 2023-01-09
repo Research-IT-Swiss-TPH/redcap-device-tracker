@@ -2,7 +2,7 @@
     <div>
         <span v-if="!isLoaded">
             <div class="text-center">
-                <b-spinner variant="warning" type="grow" label="Loading..."></b-spinner>
+                <b-spinner label="Loading..."></b-spinner>
             </div>
         </span>
         <span v-else-if="isLoaded&&fields.length == 0">
@@ -10,10 +10,11 @@
         </span>
 
         <div v-if="isLoaded&&fields.length > 0">
-             <b-form-group v-for="field in fields" :key="field.name">
+             <b-form-group v-for="(field, index) in fields" :key="field.name">
                     <div v-if="field.type == 'text'">
                         <b-form-input 
-                            :disabled="disabled"
+                            v-model="additionals[field.name]"
+                            :disabled="disabled" 
                             :placeholder="field.label"
                         />
                     </div>
@@ -21,6 +22,7 @@
                         <b-form-textarea
                             rows="3"
                             max-rows="6"
+                            v-model="additionals[field.name]"
                             :disabled="disabled"
                             :placeholder="field.label"
                         />
@@ -28,13 +30,15 @@
                     <div v-else-if="field.type == 'yesno'">
                         <b-form-checkbox 
                             :disabled="disabled"
+                            v-model="additionals[field.name]"
                             switch size="lg">
                             {{ field.label }}
                         </b-form-checkbox>
                     </div>
                     <div v-else-if="field.type == 'select'">
                         <b-form-select
-                            :value="null"
+                            placeholder="fOO"
+                            v-model="additionals[field.name]"
                             :disabled="disabled"
                             :options="field.enum"
                          >
@@ -61,8 +65,21 @@
             isLoaded: Boolean,
             disabled: Boolean
         },
+        data() {
+            return {
+                additionals: {}
+            }
+        },
         methods: {
 
+        },
+        watch: {
+            additionals: {
+                handler(newValue, oldValue) {
+                    this.$emit('changeAdditionals', newValue)
+                },
+                deep: true
+            }
         }
 
     }

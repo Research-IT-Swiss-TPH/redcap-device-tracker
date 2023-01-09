@@ -133,13 +133,22 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $fieldMetaData = $result->fetch_object();
             $result->close();
 
+            $enum = [];
+            $paresdEnum = parseEnum($fieldMetaData->element_enum);
+            foreach ($paresdEnum as $value => $text) {
+                $enum[] = array(
+                    "value" => $value,
+                    "text" => $text
+                );
+            }
+
             return array(
                 "name"  => $fieldMetaData->field_name,
                 "type"  => $fieldMetaData->element_type,
                 "label" => $fieldMetaData->element_label,
                 "note"  => $fieldMetaData->element_note,
                 "valid" => $fieldMetaData->element_validation_type,
-                "enum"  => parseEnum($fieldMetaData->element_enum)
+                "enum"  => $enum
              );                
         }
     }
@@ -214,12 +223,25 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  match them and finally run a getAdditionalFieldData() method 
             //  also use flag: $hasExtra = false;
             $hasExtra = false;
+            $dataValues_t = [];
+            
+            if(!empty($tracking->extra)) {
+                $hasExtra = true;
+
+                // Validate extra fields with tracking field instructions
+                // Validate extra fields with actual fields in form
+
+                foreach ($tracking->extra as $key => $value) {
+                    //  push values to fields and add to $dataValues_t
+                    $dataValues_t[$key] = $value;
+
+                }
+                
+            }
 
             if($action == 'assign-device') {
                 //  add additional values here...
-                $dataValues_t = [
-                    $tracking->field => $tracking->device
-                ];
+                $dataValues_t[$tracking->field] = $tracking->device;
             }
 
             //  Perform actual save only if we have data for the specific action to be saved
@@ -267,7 +289,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             "devices_project" => $this->devices_project_id,
             "saved_devices" => $saved_d,
             "saved_tracking" => $saved_t ?? [],
-            "log_id" => $logId
+            "log_id" => $logId,
+            "extra" => $tracking->extra
         );
 
         $this->sendResponse($response);         

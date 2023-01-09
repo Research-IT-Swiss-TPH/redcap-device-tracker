@@ -64,6 +64,7 @@
                     :disabled="modalMode == 'assign'&&!isValidDevice"
                     :isLoaded="isAdded"
                     :fields="additionalFields"
+                    @changeAdditionals="extra=$event"
                 />
             </div>
 
@@ -119,6 +120,7 @@
 
             additionalFields: [],
             isAdded: false,
+            extra: []
         }
     },
     props: {
@@ -168,7 +170,7 @@
                         field_id: this.field.name,
                         device_id: this.deviceId,
                         user_id: this.page.user_id,
-                        extra: "TO DO"
+                        extra: JSON.stringify(this.extra)
                     }
                 })
                 .then(() => {
@@ -182,6 +184,10 @@
                 .finally(()=>{
                     this.isProcessing = false
                 })
+        },
+
+        foo(bar) {
+            console.log(bar)
         },
 
         async loadAdditionalFields() {
