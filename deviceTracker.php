@@ -184,6 +184,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 [
                     "action"=> $action,
                     "field"=> $tracking->field,
+                    "value"=> $currentTrackingValue,
                     "record" => $tracking->owner,
                     "instance" => $currentInstanceId,
                     "user" => $tracking->user,
@@ -211,6 +212,39 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         );
 
         $this->sendResponse($response);         
+    }
+
+    /**
+     * Provide logs for monitoring
+     * 
+     * 
+     */
+    public function provideLogs() {
+
+        //  Initiate logs variable
+        $logs = [];
+
+        //  Default Query
+        $sql = "select log_id, project_id, message, date,  user, action, field, value, record, instance";
+        $parameters = [];
+
+        //  Project Page specific query (limit output to current pid only)
+        if(isset($_GET["pid"])) {
+            $project_id = htmlentities($_GET["pid"], ENT_QUOTES);
+
+            $sql .= " WHERE project_id = ?";
+            $parameters = [$project_id];
+        }
+
+        //  Run query
+        $result = $this->queryLogs($sql, $parameters);
+        while($row = $result->fetch_object()){
+            $logs[] = $row;
+        }
+
+        //  Return response
+        $this->sendResponse($logs);
+
     }
 
     /**
@@ -533,7 +567,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             }
         </script>
         <!-- actual vue scripts -->
-        <script src="<?= $this->getUrl('./dist/render.js') ?>"></script>
+        <script src="<?= $this->getUrl('./dist/appTracker.js') ?>"></script>
         <?php
     }
 

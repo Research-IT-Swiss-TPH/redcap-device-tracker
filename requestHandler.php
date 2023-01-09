@@ -51,6 +51,10 @@ if ($_REQUEST['action'] == 'get-tracking-logs')  {
     );
 }
 
+if ($_REQUEST['action'] == 'provide-logs')  {
+    $module->provideLogs();
+}
+
 //  Error handler
 else {
     header("HTTP/1.1 400 Bad Request");

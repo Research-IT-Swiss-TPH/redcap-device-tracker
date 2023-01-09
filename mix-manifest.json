@@ -1,3 +1,4 @@
 {
-    "/dist/render.js": "/dist/render.js"
+    "/dist/appTracker.js": "/dist/appTracker.js",
+    "/dist/appMonitor.js": "/dist/appMonitor.js"
 }
