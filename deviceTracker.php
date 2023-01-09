@@ -184,7 +184,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 [
                     "action"=> $action,
                     "field"=> $tracking->field,
-                    "value"=> $currentTrackingValue,
+                    "value"=> $tracking->device,
                     "record" => $tracking->owner,
                     "instance" => $currentInstanceId,
                     "user" => $tracking->user,

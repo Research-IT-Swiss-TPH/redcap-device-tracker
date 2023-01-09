@@ -37,6 +37,8 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 //
 //
 //
+//
+//
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   name: 'AppMonitor',
@@ -49925,8 +49927,10 @@ var render = function () {
     [
       _c("b-table", {
         attrs: {
+          "show-empty": "",
           striped: "",
           hover: "",
+          "empty-text": "There have been no tracking actions yet.",
           "sort-by": _vm.sortBy,
           "sort-desc": _vm.sortDesc,
           busy: _vm.isBusy,

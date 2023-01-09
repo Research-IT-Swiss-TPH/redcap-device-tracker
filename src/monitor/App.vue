@@ -1,8 +1,10 @@
 <template>
     <div>        
         <b-table 
+            show-empty
             striped 
             hover 
+            empty-text="There have been no tracking actions yet."
             :sort-by.sync="sortBy"
             :sort-desc.sync="sortDesc"
             :busy.sync="isBusy"
@@ -16,7 +18,7 @@
             v-model="currentPage"
             :total-rows="rows"
             :per-page="perPage"
-        ></b-pagination>        
+        ></b-pagination>
     </div>
 </template>
 <script>
