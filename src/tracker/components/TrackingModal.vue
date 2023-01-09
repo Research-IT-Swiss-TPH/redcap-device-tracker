@@ -6,9 +6,11 @@
         no-close-on-backdrop
         title="Device Tracker" >
             <div v-if="isActionInit">
+
                 <div v-if="modalMode == 'assign'">
                     <b-alert show variant="info"><b>Assign device:</b> 
-                        <br/>Please insert a valid device ID to process assignment. You can approve the assignment with a valid device only.</b-alert>
+                        <br/>Please insert a valid device ID to process assignment. You can approve the assignment with a valid device only.
+                    </b-alert>
                     <b-form >
                         <b-form-group>
                             <b-input-group class="mt-3">
@@ -43,39 +45,28 @@
                                 </b-form-invalid-feedback>                
                             </b-input-group>   
                         </b-form-group>
-                        <b-form-group>
-                            <b-button :disabled="!isValidDevice" size="lg" block  class="btn-primaryrc" @click="processAction()">
-                                <span v-if="!isProcessing">Approve</span>
-                                <b-spinner v-else></b-spinner>
-                            </b-button>             
-                        </b-form-group>              
                     </b-form>
                 </div>
+
                 <div v-else-if="modalMode == 'return' ">
                     <b-alert show variant="info"><b>Return device:</b>
-                        <br/>By approving you will set the device state of device <b>{{deviceId}}</b> to "returned".</b-alert>
-                    <b-form >
-                        <b-form-group>
-                            <b-button size="lg" block  class="btn-primaryrc" @click="processAction()">
-                                <span v-if="!isProcessing">Approve</span>
-                                <b-spinner v-else></b-spinner>
-                            </b-button>
-                        </b-form-group>
-                    </b-form>
+                        <br/>By approving you will set the device state of device <b>{{deviceId}}</b> to "returned".
+                    </b-alert>
                 </div>
+
                 <div v-else-if="modalMode == 'reset' ">
                     <b-alert show variant="info"><b>Reset device:</b> 
-                        <br/>By approving you will set the device state of device <b>{{deviceId}}</b> to "reset".</b-alert>
-                    <b-form >
-                        <b-form-group>
-                            <b-button size="lg" block  class="btn-primaryrc" @click="processAction()">
-                                <span v-if="!isProcessing">Approve</span>
-                                <b-spinner v-else></b-spinner>
-                            </b-button>
-                        </b-form-group>
-                    </b-form>
-                </div>                
+                        <br/>By approving you will set the device state of device <b>{{deviceId}}</b> to "reset".
+                    </b-alert>
+                </div>
+
+                <tracking-add-fields 
+                    :disabled="modalMode == 'assign'&&!isValidDevice"
+                    :isLoaded="isAdded"
+                    :fields="additionalFields"
+                />
             </div>
+
             <div v-else>
                <sweet-alert 
                 :action="modalMode"
@@ -84,24 +75,32 @@
                 :error="actionErrorMessage"
                 />
             </div>
-        <!-- Default Footer for all modes -->
-        <template #modal-footer="{ ok, cancel, hide }">
-            <b-button v-if="isActionInit" :disabled="isProcessing" @click="cancel()">
-                Cancel
-            </b-button>
-            <b-button v-if="!isActionInit" class="btn-primaryrc" @click="complete()">
-                Complete 
-            </b-button>
-        </template>
+
+            <!-- Default Footer for all modes -->
+            <template #modal-footer="{ ok, cancel, hide }">                
+                <b-button v-if="isActionInit||hasActionError" :disabled="isProcessing" @click="cancel()">
+                    Cancel
+                </b-button>
+                <b-button v-if="!isActionInit&&!hasActionError" class="btn-primaryrc" @click="complete()">
+                    Complete 
+                </b-button>
+                <b-button v-if="isActionInit" style="text-transform: capitalize;" :disabled="modalMode == 'assign'&&!isValidDevice"  class="btn-primaryrc" @click="processAction()">
+                    <span v-if="!isProcessing">{{ modalMode }} Device</span>
+                    <b-spinner small v-else></b-spinner>
+                </b-button>                                
+            </template>
       </b-modal>
   </template>
   
   <script>
   import SweetAlert from './SweetAlert.vue'
+  import TrackingAddFields from './TrackingAddFields.vue'
+
   export default {
     name: 'TrackingModal',
     components: {
-        SweetAlert
+        SweetAlert,
+        TrackingAddFields
     },
     data() {
         return {
@@ -116,7 +115,10 @@
             //  Validation helpers during action 'assign'
             userInput: "",
             isValidDevice: null,
-            isValidating: false
+            isValidating: false,
+
+            additionalFields: [],
+            isAdded: false,
         }
     },
     props: {
@@ -180,6 +182,30 @@
                 .finally(()=>{
                     this.isProcessing = false
                 })
+        },
+
+        async loadAdditionalFields() {
+
+            this.axios({
+                params: {                        
+                        action: 'get-additional-fields',
+                        mode: this.modalMode,
+                        field_id: this.field.name,
+                    }
+                })
+                .then((response) => {
+                    this.additionalFields = response.data
+                    //console.log(response.data)
+                })
+                .catch(e => {
+                    console.log(e)
+                })
+                .finally(()=>{
+                    setTimeout(()=>{
+                        this.isAdded = true
+                    }, 750)
+                })            
+
         },
 
         setProcessSuccess() {
@@ -249,7 +275,14 @@
         }
     },
     mounted(){
+
+        this.$root.$on('bv::modal::show', (bvEvent, modalId) => {
+            console.log('Modal is about to be shown', bvEvent, modalId)
+            this.loadAdditionalFields()
+        })
+
         this.$root.$on('bv::modal::hide', (bvEvent, modalId) => {
+
             this.resetModal()
         })
     }

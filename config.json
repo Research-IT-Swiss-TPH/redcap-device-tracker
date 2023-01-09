@@ -49,6 +49,28 @@
                     "key": "device-types",
                     "name": "<b>Filter by Device Types</b><br>Comma separated list",
                     "type": "text"
+                },
+                {
+                    "key": "use-additional-assign",
+                    "type": "checkbox",
+                    "name": "Use additional fields during 'assign' action?"
+                },
+                {
+                    "key": "additional-field-assign",
+                    "name": "Additional Field for Assign",
+                    "type": "sub_settings",
+                    "repeatable": true,
+                    "branchingLogic": {
+                        "field": "use-additional-assign",
+                        "value": true
+                    },
+                    "sub_settings": [
+                        {
+                            "key": "add-field-assign",
+                            "type": "field-list",
+                            "name": "Additional Field"
+                        }
+                    ]
                 }
             ]
         }

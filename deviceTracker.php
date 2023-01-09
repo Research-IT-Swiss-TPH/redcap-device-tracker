@@ -33,7 +33,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         //  Check if in project context, otherwise this will break during module enable/disable
         if(defined('PROJECT_ID')) {
             $this->devices_project_id = $this->getSystemSetting("devices-project");
-            $this->devices_event_id = (new \Project( $this->devices_project_id ))->firstEventId;
+            $this->devices_event_id = (new \Project( $this->devices_project_id ))->firstEventId;            
         }
     }
 
@@ -83,6 +83,65 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $this->sendError(404);
         }
 
+    }
+
+    /**
+     * Get Additional Fields for different actions
+     * 
+     * 
+     */
+    public function getAdditionalFields($mode, $field) {
+
+        $additionalFields = [];
+        $pid = htmlentities($_GET["pid"], ENT_QUOTES, 'UTF-8');
+
+        $trackings = $this->getSubSettings('trackings', $pid);
+        $trackings_filtered = array_filter($trackings, function($tracking) use ($field){
+            return $tracking["tracking-field"] == $field;
+        });
+
+        if(count($trackings_filtered) > 1) {
+            $this->sendError("Invalid trackings count for field " . $field);
+        }
+        $tracking = reset($trackings_filtered);
+        
+        if($tracking["use-additional-" . $mode]) {
+
+            //  Get Metadata from database
+            foreach ($tracking["additional-field-assign"] as $key => $additionalField) {
+                $field = $this->getField($additionalField["add-field-assign"]);
+                $additionalFields[] = $this->getFieldMetaData($additionalField["add-field-assign"], $pid);
+            }
+
+        }
+
+        $this->sendResponse($additionalFields);
+
+    }
+
+    /**
+     * Get REDCap field meta data from redcap_meta_data table
+     * 
+     * 
+     */
+    private function getFieldMetaData($field, $pid) {
+        $sql = 'SELECT * FROM redcap_metadata WHERE project_id = ? AND field_name = ?';
+        $result =  $this->query($sql, [$pid, $field]);
+     
+        if($result->num_rows == 1) {
+
+            $fieldMetaData = $result->fetch_object();
+            $result->close();
+
+            return array(
+                "name"  => $fieldMetaData->field_name,
+                "type"  => $fieldMetaData->element_type,
+                "label" => $fieldMetaData->element_label,
+                "note"  => $fieldMetaData->element_note,
+                "valid" => $fieldMetaData->element_validation_type,
+                "enum"  => parseEnum($fieldMetaData->element_enum)
+             );                
+        }
     }
 
     public function handleTracking(String $action, Tracking $tracking) {
@@ -216,7 +275,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
     /**
      * Provide logs for monitoring
-     * 
+     * Limits to project context
      * 
      */
     public function provideLogs() {
@@ -538,9 +597,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                     var trackings =  <?=json_encode($tracking_fields) ?>;
                     trackings.forEach(function(field_name){
 
-                        //  Insert module object
-                        //var module = <?=$this->getJavascriptModuleObjectName()?>;
-
                         //  Insert vue target
                         var target = $('tr#'+field_name+'-tr').find('input');
                         var wrapper = $('#STPH_DT_WRAPPER_' + field_name);
@@ -561,7 +617,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             const stph_dt_getFieldMetaFromBackend = function() {
                 return <?= json_encode($this->getFieldMeta($tracking_fields, $record_id)) ?>
             }
-
             const stph_dt_getPageMetaFromBackend = function() {
                 return <?= json_encode($this->getPageMeta()) ?>
             }

@@ -25,6 +25,13 @@ if ($_REQUEST['action'] == 'assign-device' || $_REQUEST['action'] == 'return-dev
     }
 }
 
+if($_REQUEST['action'] == 'get-additional-fields') {
+    $module->getAdditionalFields(
+        htmlentities($_GET["mode"], ENT_QUOTES),
+        htmlentities($_GET["field_id"], ENT_QUOTES)
+    );
+}
+
 //  Validation handler
 if ($_REQUEST['action'] == 'validate-device') {
     if(!isset($_GET["device_id"]) || !isset($_GET["tracking_field"])) {
