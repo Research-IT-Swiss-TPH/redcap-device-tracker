@@ -282,8 +282,7 @@
     },
     mounted(){
 
-        this.$root.$on('bv::modal::show', (bvEvent, modalId) => {
-            console.log('Modal is about to be shown', bvEvent, modalId)
+        this.$root.$on('bv::modal::show', (bvEvent, modalId) => {            
             this.loadAdditionalFields()
         })
 

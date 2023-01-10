@@ -30,6 +30,13 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         parent::__construct();
         //  validate module settings..
         //$this->trackings = $this->getTrackings();
+
+        //  Setup Project Context if pid is available through request and constant is not yet defined
+        if(isset($_GET["pid"]) && !defined('PROJECT_ID')) {
+            $pid = $this->escape($_GET["pid"]);
+            define('PROJECT_ID', $pid);
+        }
+
         //  Check if in project context, otherwise this will break during module enable/disable
         if(defined('PROJECT_ID')) {
             $this->devices_project_id = $this->getSystemSetting("devices-project");
@@ -53,11 +60,14 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
             //  Check if is form page and has tracking fields
             if($_GET["page"] && in_array($_GET["page"], array_keys($this->trackings))) {
+
+                $page = $this->escape($_GET["page"]);
+                $id = $this->escape($_GET["id"]);
                 
                 //  Include Javascript             
                 $this->includeJavascript(
-                    $this->trackings[htmlentities($_GET["page"], ENT_QUOTES)], 
-                    htmlentities($_GET["id"], ENT_QUOTES)
+                    $this->trackings[$page],
+                    $id
                 );
             }
         }
@@ -93,26 +103,13 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     public function getAdditionalFields($mode, $field) {
 
         $additionalFields = [];
-        $pid = htmlentities($_GET["pid"], ENT_QUOTES, 'UTF-8');
 
-        $trackings = $this->getSubSettings('trackings', $pid);
-        $trackings_filtered = array_filter($trackings, function($tracking) use ($field){
-            return $tracking["tracking-field"] == $field;
-        });
-
-        if(count($trackings_filtered) > 1) {
-            $this->sendError("Invalid trackings count for field " . $field);
-        }
-        $tracking = reset($trackings_filtered);
+        $tracking = $this->getTrackingForField($field);
         
         if($tracking["use-additional-" . $mode]) {
-
-            //  Get Metadata from database
-            foreach ($tracking["additional-field-assign"] as $key => $additionalField) {
-                $field = $this->getField($additionalField["add-field-assign"]);
-                $additionalFields[] = $this->getFieldMetaData($additionalField["add-field-assign"], $pid);
+            foreach ($tracking["additional-fields-" . $mode] as $key => $additionalField) {
+                $additionalFields[] = $this->getFieldMetaData($additionalField["add-field-" . $mode]);
             }
-
         }
 
         $this->sendResponse($additionalFields);
@@ -120,13 +117,30 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }
 
     /**
+     * Get Tracking for Field
+     * (Helper)
+     */
+    private function getTrackingForField($field) {
+        $trackings = $this->getSubSettings('trackings');
+        $trackings_filtered = array_filter($trackings, function($tracking) use ($field){
+            return $tracking["tracking-field"] == $field;
+        });
+
+        if(count($trackings_filtered) > 1) {
+            throw new Exception("Invalid trackings count for field " . $field);
+        }
+
+        return reset($trackings_filtered);
+    }
+
+    /**
      * Get REDCap field meta data from redcap_meta_data table
      * 
      * 
      */
-    private function getFieldMetaData($field, $pid) {
+    private function getFieldMetaData($field) {
         $sql = 'SELECT * FROM redcap_metadata WHERE project_id = ? AND field_name = ?';
-        $result =  $this->query($sql, [$pid, $field]);
+        $result =  $this->query($sql, [PROJECT_ID, $field]);
      
         if($result->num_rows == 1) {
 
@@ -222,11 +236,15 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  relevant tracking project fields. Mechanism to save data will first take ajax params, fetch settings
             //  match them and finally run a getAdditionalFieldData() method 
             //  also use flag: $hasExtra = false;
-            $hasExtra = false;
+
+            //  Check if has extra fields
+            $hasExtra = !empty($tracking->extra);
             $dataValues_t = [];
             
-            if(!empty($tracking->extra)) {
-                $hasExtra = true;
+            if($hasExtra) {
+
+                //  Validate
+                $trackings = $this->getTrackingForField($tracking->field);
 
                 // Validate extra fields with tracking field instructions
                 // Validate extra fields with actual fields in form
@@ -311,18 +329,19 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         $parameters = [];
 
         //  Project Page specific query (limit output to current pid only)
-        if(isset($_GET["pid"])) {
-            $project_id = $this->escape($_GET["pid"]);
-
+        if(defined('PROJECT_ID')) {
             $sql .= " WHERE project_id = ?";
-            $parameters = [$project_id];
+            $parameters = [PROJECT_ID];
         }
 
         //  Run query
         $result = $this->queryLogs($sql, $parameters);
-        while($row = $result->fetch_object()){
+        while($row = $result->fetch_assoc()){
             $logs[] = $this->escape($row);
         }
+        $result->close();
+
+
 
         //  Return response
         $this->sendResponse($logs);
@@ -409,10 +428,10 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     private function getPageMeta() {
         return array(
             "path"       => PAGE_FULL,
-            "project_id" => htmlentities($_GET["pid"],ENT_QUOTES),
-            "record_id"  => htmlentities($_GET["id"], ENT_QUOTES),
-            "page_name"  => htmlentities($_GET["page"], ENT_QUOTES),
-            "event_id"   => htmlentities($_GET["event_id"], ENT_QUOTES),
+            "project_id" => $this->escape($_GET["pid"]),
+            "record_id"  => $this->escape($_GET["id"]),
+            "page_name"  => $this->escape($_GET["page"]),
+            "event_id"   => $this->escape($_GET["event_id"]),
             "user_id"    => USERID
         );
     }
@@ -489,7 +508,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
 
     /**
-     * Get field meta
+     * Get field meta to pass to Vue on instance creation
      * Used to define field state and render appropriate views
      * 
      * @since 1.0.0
@@ -507,7 +526,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $device_session_state = null;
 
             $params = [
-                'project_id'    => htmlentities($_GET["project_id"], ENT_QUOTES, 'UTF-8'), 
+                'project_id'    => PROJECT_ID, 
                 'records' => $record_id,
                 'fields' => $field,
                 'return_format' => 'json'
@@ -623,11 +642,11 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                         //  Insert vue target
                         var target = $('tr#'+field_name+'-tr').find('input');
                         var wrapper = $('#STPH_DT_WRAPPER_' + field_name);
-                        //var device = target.val();
+                        //  Prepend
                         target.parent().prepend(wrapper);
                         wrapper.show();
                         target.hide();
-                        console.log(field_name + " prepended wrapper. Hiding.");
+                        console.log('Device Tracker initiated on field "' + field_name + '"');
                     });
                 })
             });

@@ -27,8 +27,8 @@ if ($_REQUEST['action'] == 'assign-device' || $_REQUEST['action'] == 'return-dev
 
 if($_REQUEST['action'] == 'get-additional-fields') {
     $module->getAdditionalFields(
-        htmlentities($_GET["mode"], ENT_QUOTES),
-        htmlentities($_GET["field_id"], ENT_QUOTES)
+        $module->escape($_GET["mode"]),
+        $module->escape($_GET["field_id"])
     );
 }
 
@@ -40,8 +40,8 @@ if ($_REQUEST['action'] == 'validate-device') {
         die("Invalid parameters."); 
     }
     $module->validateDevice(
-        htmlentities($_GET["device_id"], ENT_QUOTES), 
-        htmlentities($_GET["tracking_field"], ENT_QUOTES)
+        $module->escape($_GET["device_id"]),
+        $module->escape($_GET["tracking_field"])
     );
 } 
 
@@ -53,8 +53,8 @@ if ($_REQUEST['action'] == 'get-tracking-logs')  {
         die("Invalid parameters."); 
     }
     $module->getTrackingLogs(
-        htmlentities($_GET["owner_id"], ENT_QUOTES), 
-        htmlentities($_GET["tracking_field"], ENT_QUOTES)
+        $module->escape($_GET["owner_id"]), 
+        $module->escape($_GET["tracking_field"])
     );
 }
 

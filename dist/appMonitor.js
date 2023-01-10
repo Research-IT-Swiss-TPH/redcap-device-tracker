@@ -92,7 +92,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
                   }
                 }).then(function (response) {
                   _this.items = response.data;
-                  console.log(response.data);
+                  //console.log(response.data)
                 })["catch"](function (e) {
                   console.log(e.message);
                 })["finally"](function () {

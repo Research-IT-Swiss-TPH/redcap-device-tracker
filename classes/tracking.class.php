@@ -2,6 +2,7 @@
 namespace STPH\deviceTracker;
 
 use Exception;
+use ExternalModules\ExternalModules;
 
 class Tracking {
 
@@ -16,16 +17,18 @@ class Tracking {
     public function __construct($request = []) {
         if(!empty($request) && is_array($request)) {
 
-            $this->project  = htmlentities($request["pid"], ENT_QUOTES, 'UTF-8');
-            $this->event    = htmlentities($request["event_id"], ENT_QUOTES, 'UTF-8');
-            $this->owner    = htmlentities($request["owner_id"], ENT_QUOTES, 'UTF-8');
-            $this->field    = htmlentities($request["field_id"], ENT_QUOTES, 'UTF-8');
-            $this->device   = htmlentities($request["device_id"], ENT_QUOTES, 'UTF-8');
-            $this->user     = htmlentities($request["user_id"], ENT_QUOTES, 'UTF-8');
+            $this->project  = PROJECT_ID;
+            $this->event    = ExternalModules::escape($request["event_id"]);
+            $this->owner    = ExternalModules::escape($request["owner_id"]);
+            $this->field    = ExternalModules::escape($request["field_id"]);
+            $this->device   = ExternalModules::escape($request["device_id"]);
+            $this->user     = ExternalModules::escape($request["user_id"]);
             $this->extra = [];
 
             if(!empty($request["extra"]) && is_array(json_decode($request["extra"], true))) {
-                $this->extra = json_decode(htmlspecialchars($request["extra"], ENT_QUOTES), true);
+
+                $this->extra = ExternalModules::escape(json_decode($request["extra"], true));
+
             }
         } else {
             throw new Exception("Invalid Request");

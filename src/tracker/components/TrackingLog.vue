@@ -43,7 +43,7 @@
                 .then((response) => {
                     this.isProcessing = false
                     this.items = response.data
-                    console.log(response.data)
+                    //console.log(response.data)
                 })
                 .catch(e => {
                     console.log(e)

@@ -56,7 +56,7 @@
                     "name": "Use additional fields during 'assign' action?"
                 },
                 {
-                    "key": "additional-field-assign",
+                    "key": "additional-fields-assign",
                     "name": "Additional Field for Assign",
                     "type": "sub_settings",
                     "repeatable": true,
@@ -71,6 +71,50 @@
                             "name": "Additional Field"
                         }
                     ]
+                },                
+                {
+                    "key": "use-additional-return",
+                    "type": "checkbox",
+                    "name": "Use additional fields during 'return' action?"
+                },
+                {
+                    "key": "additional-fields-return",
+                    "name": "Additional Field for Return",
+                    "type": "sub_settings",
+                    "repeatable": true,
+                    "branchingLogic": {
+                        "field": "use-additional-return",
+                        "value": true
+                    },
+                    "sub_settings": [
+                        {
+                            "key": "add-field-return",
+                            "type": "field-list",
+                            "name": "Additional Field"
+                        }
+                    ]
+                },                
+                {
+                    "key": "use-additional-reset",
+                    "type": "checkbox",
+                    "name": "Use additional fields during 'reset' action?"
+                },
+                {
+                    "key": "additional-fields-reset",
+                    "name": "Additional Field for Reset",
+                    "type": "sub_settings",
+                    "repeatable": true,
+                    "branchingLogic": {
+                        "field": "use-additional-reset",
+                        "value": true
+                    },
+                    "sub_settings": [
+                        {
+                            "key": "add-field-reset",
+                            "type": "field-list",
+                            "name": "Additional Field"
+                        }
+                    ]
                 }
             ]
         }
@@ -79,7 +123,7 @@
     "links":{
         "control-center": [
             {
-                "name": "Device Tracker Overview",
+                "name": "Device Tracker",
                 "key": "device-tracker",
                 "icon": "fas fa-satellite-dish",
                 "url": "link-control-center.php",
@@ -88,7 +132,7 @@
         ],
         "project": [
             {
-                "name": "Device Tracker Dashboard",
+                "name": "Device Tracker",
                 "key": "device-tracker",
                 "icon": "fas fa-satellite-dish",
                 "url": "link-project.php",
