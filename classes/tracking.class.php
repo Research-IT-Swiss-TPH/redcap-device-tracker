@@ -18,16 +18,17 @@ class Tracking {
         if(!empty($request) && is_array($request)) {
 
             $this->project  = PROJECT_ID;
-            $this->event    = ExternalModules::escape($request["event_id"]);
-            $this->owner    = ExternalModules::escape($request["owner_id"]);
-            $this->field    = ExternalModules::escape($request["field_id"]);
-            $this->device   = ExternalModules::escape($request["device_id"]);
-            $this->user     = ExternalModules::escape($request["user_id"]);
+            $this->event    = htmlspecialchars($request["event_id"]);
+            $this->owner    = htmlspecialchars($request["owner_id"]);
+            $this->field    = htmlspecialchars($request["field_id"]);
+            $this->device   = htmlspecialchars($request["device_id"]);
+            $this->user     = htmlspecialchars($request["user_id"]);
             $this->extra = [];
 
             if(!empty($request["extra"]) && is_array(json_decode($request["extra"], true))) {
 
-                $this->extra = ExternalModules::escape(json_decode($request["extra"], true));
+                //$this->extra = ExternalModules::escape(json_decode($request["extra"], true));
+                $this->extra = array_map("htmlspecialchars", json_decode($request["extra"], true));
 
             }
         } else {

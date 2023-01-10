@@ -714,6 +714,48 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             echo json_encode(array("error" => $msg));
         } 
         die();
-    }     
+    }
+
+    /**
+     * Duplicate of escape method from ExternalModules class, since it has been added in v13.1.2 and might not be supported
+     * on most insitutions
+     * 
+     */
+	public static function escape($value){
+		$type = gettype($value);
+
+		/**
+		 * The unnecessary casting on these first few types exists solely to inform psalm and avoid warnings.
+		 */
+		if($type === 'boolean'){
+			return (bool) $value;
+		}
+		else if($type === 'integer'){
+			return (int) $value;
+		}
+		else if($type === 'double'){
+			return (float) $value;
+		}
+		else if($type === 'array'){
+			$newValue = [];
+			foreach($value as $key=>$subValue){
+				$key = static::escape($key);
+				$subValue = static::escape($subValue);
+				$newValue[$key] = $subValue;
+			}
+
+			return $newValue;
+		}
+		else if($type === 'NULL'){
+			return null;
+		}
+		else{
+			/**
+			* Handle strings, resources, and custom objects (via the __toString() method. 
+			* Apart from escaping, this produces that same behavior as if the $value was echoed or appended via the "." operator.
+			*/
+			return htmlspecialchars(''.$value, ENT_QUOTES);
+		}
+	}    
     
 }
