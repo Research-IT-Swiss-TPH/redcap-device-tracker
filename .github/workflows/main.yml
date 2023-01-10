@@ -14,3 +14,4 @@ jobs:
         uses: docker://vimeo/psalm-github-actions
         with:
           security_analysis: true
+          report_file: results.sarif
