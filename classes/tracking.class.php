@@ -25,7 +25,7 @@ class Tracking {
             $this->extra = [];
 
             if(!empty($request["extra"]) && is_array(json_decode($request["extra"], true))) {
-                $this->extra = json_decode($request["extra"], true);
+                $this->extra = json_decode(htmlspecialchars($request["extra"], ENT_QUOTES), true);
             }
         } else {
             throw new Exception("Invalid Request");

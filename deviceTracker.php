@@ -312,7 +312,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
         //  Project Page specific query (limit output to current pid only)
         if(isset($_GET["pid"])) {
-            $project_id = htmlentities($_GET["pid"], ENT_QUOTES);
+            $project_id = $this->escape($_GET["pid"]);
 
             $sql .= " WHERE project_id = ?";
             $parameters = [$project_id];
@@ -321,7 +321,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         //  Run query
         $result = $this->queryLogs($sql, $parameters);
         while($row = $result->fetch_object()){
-            $logs[] = $row;
+            $logs[] = $this->escape($row);
         }
 
         //  Return response
