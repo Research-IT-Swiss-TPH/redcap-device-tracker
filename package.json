@@ -7,5 +7,10 @@
     "vue-axios": "^3.5.2",
     "vue-loader": "^15.9.8",
     "vue-template-compiler": "^2.7.14"
-  }
+  },
+  "scripts": {
+    "build": "npx mix",
+    "dev": "npx mix watch",
+    "prod": "npx mix --production"
+  },  
 }
