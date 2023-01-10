@@ -12,5 +12,5 @@
     "build": "npx mix",
     "dev": "npx mix watch",
     "prod": "npx mix --production"
-  },  
+  }
 }
