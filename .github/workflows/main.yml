@@ -1,5 +1,16 @@
-name: Psalm – Security Scanner for PHP
-  uses: psalm/psalm-github-security-scan@1.2.1
-  with:
-    # File for Psalm’s output
-    report_file: # optional, default is results.sarif
+name: Psalm Static analysis
+
+on: [push, pull_request]
+
+jobs:
+  psalm:
+    name: Psalm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Psalm
+        uses: docker://vimeo/psalm-github-actions
+        with:
+          security_analysis: true
