@@ -1,4 +1,4 @@
-# redcap-device-tracker
+# redcap-device-tracker [![Psalm Static analysis](https://github.com/tertek/redcap-device-tracker/actions/workflows/main.yml/badge.svg)](https://github.com/tertek/redcap-device-tracker/actions/workflows/main.yml)
 REDCap External Module to cover the case for cross-project multi-device tracking.
 
 > **Warning**
