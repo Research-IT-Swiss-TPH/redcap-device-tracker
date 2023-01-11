@@ -73,7 +73,7 @@
                 :action="modalMode"
                 :device="deviceId" 
                 :field="field.name" 
-                :error="actionErrorMessage"
+                :error="actionError"
                 />
             </div>
 
@@ -112,8 +112,8 @@
             isDeviceReset: false,
             //  Error Handlers
             hasActionError: false,
-            actionErrorMessage: "",
-            //  Validation helpers during action 'assign'
+            actionError: {},
+
             userInput: "",
             isValidDevice: null,
             isValidating: false,
@@ -162,9 +162,6 @@
             this.axios({
                 params: {                        
                         action: this.modalMode + '-device',
-                        //  pid
-                        //  REDCap automatically appends pid to every async GET request, 
-                        //  so we do not need to specifically send it
                         event_id: this.page.event_id,
                         owner_id: this.page.record_id,
                         field_id: this.field.name,
@@ -178,8 +175,7 @@
                 })
                 .catch(e => {
                     this.hasActionError = true
-                    //this.error = e
-                    this.actionErrorMessage = e.message
+                    this.actionError = e
                 })
                 .finally(()=>{
                     this.isProcessing = false

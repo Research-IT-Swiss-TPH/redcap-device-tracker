@@ -13,6 +13,7 @@ class Tracking {
     public String $device;
     public Array $extra;
     public String $user;
+    public String $timestamp;
 
     public function __construct($request = []) {
         if(!empty($request) && is_array($request)) {
@@ -24,12 +25,10 @@ class Tracking {
             $this->device   = htmlspecialchars($request["device_id"]);
             $this->user     = htmlspecialchars($request["user_id"]);
             $this->extra = [];
+            $this->timestamp = date("Y-m-d H:i:s");
 
             if(!empty($request["extra"]) && is_array(json_decode($request["extra"], true))) {
-
-                //$this->extra = ExternalModules::escape(json_decode($request["extra"], true));
                 $this->extra = array_map("htmlspecialchars", json_decode($request["extra"], true));
-
             }
         } else {
             throw new Exception("Invalid Request");
@@ -47,7 +46,7 @@ class Tracking {
                 "session_owner_id" => $this->owner,
                 "session_project_id" => $this->project,
                 "session_device_state" => 1,
-                "session_assign_date" => date("Y-m-d")
+                "session_assign_date" => $this->timestamp
             ];
             $instance++;
         }
@@ -55,14 +54,14 @@ class Tracking {
         if($action == "return-device") {
             $values = [
                 "session_device_state" => 2,
-                "session_return_date" => date("Y-m-d")
+                "session_return_date" => $this->timestamp
             ];
         }
 
         if($action == "reset-device") {
             $values = [
                 "session_device_state" => 0,
-                "session_reset_date" => date("Y-m-d")
+                "session_reset_date" => $this->timestamp
             ];
         }
 

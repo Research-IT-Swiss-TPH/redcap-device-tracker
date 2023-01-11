@@ -53,6 +53,8 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         key: 'log_id',
         sortable: true
       }, {
+        key: 'message'
+      }, {
         key: 'project_id',
         sortable: true
       }, {
@@ -73,6 +75,8 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       }, {
         key: 'value',
         sortable: false
+      }, {
+        key: 'error'
       }],
       items: []
     };

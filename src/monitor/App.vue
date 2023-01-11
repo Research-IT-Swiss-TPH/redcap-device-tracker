@@ -34,6 +34,7 @@ export default {
         currentPage: 1,
         fields: [
           { key: 'log_id', sortable: true },
+          { key: 'message'},
           { key: 'project_id', sortable: true},
           { key: 'record', sortable: true },
           { key: 'user', sortable: true },
@@ -41,6 +42,7 @@ export default {
           { key: 'action', sortable: false },
           { key: 'field', sortable: false },
           { key: 'value', sortable: false },
+          { key: 'error'}
         ],
         items: []
       }

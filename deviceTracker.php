@@ -173,7 +173,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Begin database transaction
             $this->beginDbTx();
 
-            //  Retrieve current device instance info
+            //  Retrieve current device instance info (assuming that current instance is last instance)
             list($currentInstanceId, $currentInstanceState) = $this->getCurrentDeviceInfo($tracking->device);
             //  Do checks (different for every action)
             if($action == 'assign-device') {
@@ -263,7 +263,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             }
 
             //  Perform actual save only if we have data for the specific action to be saved
-            if($action == 'assign-device' || $action != 'assign' && $hasExtra) {
+            if($action == 'assign-device' || $action != 'assign-device' && $hasExtra) {
                 $data_t = [ $tracking->owner => [$tracking->event => $dataValues_t ] ];
                 
                 $params_t = [
@@ -288,7 +288,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                     "instance" => $currentInstanceId,
                     "user" => $tracking->user,
                     "date"  => date('d-m-Y'),
-                    "valid" =>  true
+                    "valid" =>  true,
+                    "extra" => json_encode($tracking->extra),
+                    "timestamp" => $tracking->timestamp
                 ]
             );
 
@@ -296,10 +298,24 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $this->endDbTx();
 
         } catch (\Throwable $th) {
+
             //  Rollback database
             $this->rollbackDbTx();
+
+            
             //  Handle Error
-            $this->sendError(500, $th->getMessage());            
+            //  Save to logs
+            $this->log("tracking-error", [
+                "error" => $th->getMessage(),
+                "action"=> $action,
+                "field"=> $tracking->field,
+                "value"=> $tracking->device,
+                "record" => $tracking->owner,
+                "user" => $tracking->user,
+            ]);
+
+            //  Send to Frontend
+            $this->sendError(500, $th->getMessage());
         }
 
         $response = array(
@@ -325,7 +341,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         $logs = [];
 
         //  Default Query
-        $sql = "select log_id, project_id, message, date,  user, action, field, value, record, instance";
+        $sql = "select log_id, message, project_id, message, date,  user, action, field, value, record, instance, error";
         $parameters = [];
 
         //  Project Page specific query (limit output to current pid only)
@@ -340,8 +356,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $logs[] = $this->escape($row);
         }
         $result->close();
-
-
 
         //  Return response
         $this->sendResponse($logs);
@@ -366,6 +380,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
     private function rollbackDbTx() {
         $this->query("ROLLBACK;", []);
+        $this->query("SET autocommit = 1;", []);
     }
 
     /**
@@ -383,6 +398,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             'exportDataAccessGroups' => true
         ));
 
+        //  Get last instance and assume it is current instance
         $currentInstanceId = count((array)$data[$device_id]['repeat_instances'][$this->devices_event_id]["sessions"]);
         $currentInstanceState  = $data[$device_id]["repeat_instances"][$this->devices_event_id]["sessions"][$currentInstanceId]["session_device_state"];
 

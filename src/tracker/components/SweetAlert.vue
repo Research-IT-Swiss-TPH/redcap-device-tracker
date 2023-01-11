@@ -30,7 +30,13 @@
             </div>
             <h2 class="swal2-title" id="swal2-title" style="display: block;">Error!</h2>
             <div class="swal2-html-container text-center" id="swal2-html-container" style="display: block;">
-                {{ error }}
+                <b-alert show variant="danger">
+                    <p><b>{{ error.message }}</b><br>{{ JSON.parse(error.request.response).error }}</p>
+                    <hr>
+                    <p class="mb-0">
+                        Please notify a REDCap Administrator about the exact issue.
+                    </p>                    
+                </b-alert>
             </div>            
         </div>
 
@@ -43,7 +49,7 @@
             action: String,
             device: String,
             field: String,
-            error: String
+            error: Object
         },
         data() {
            return {
@@ -52,7 +58,7 @@
         },
         computed: {
             hasError: function() {
-                return !(this.error === "")
+                return (this.error.message !== undefined)
             } 
         }
 
