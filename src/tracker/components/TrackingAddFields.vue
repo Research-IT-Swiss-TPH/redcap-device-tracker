@@ -27,7 +27,7 @@
                             :placeholder="field.label"
                         />
                     </div>                    
-                    <div v-else-if="field.type == 'yesno'">
+                    <div v-else-if="field.type == 'yesno' || field.type=='truefalse'">
                         <b-form-checkbox 
                             :disabled="disabled"
                             v-model="additionals[field.name]"
@@ -37,7 +37,6 @@
                     </div>
                     <div v-else-if="field.type == 'select'">
                         <b-form-select
-                            placeholder="fOO"
                             v-model="additionals[field.name]"
                             :disabled="disabled"
                             :options="field.enum"
@@ -47,6 +46,21 @@
                             <b-form-select-option :value="null" disabled>-- {{ field.label }} --</b-form-select-option>
                         </template>                         
                          </b-form-select>
+                    </div>
+                    <div v-else-if="field.type == 'radio'">
+                        <b-form-group :label="field.label">
+                            <b-radio-group
+                                :disabled="disabled"
+                                v-model="additionals[field.name]"
+                                :options="field.enum"                                     
+                            >
+                            </b-radio-group>
+                        </b-form-group>
+                    </div>
+                    <div v-else-if="field.type=='descriptive'">
+                        <b-alert variant="info" show>
+                            <i class="fa fa-info-circle" aria-hidden="true"></i> {{ field.label }}
+                        </b-alert>
                     </div>
                     <div v-else>
                         <b-alert variant="warning" show>Field type <b>{{ field.type }}</b> not supported. Please contact administrator/developer or define another field type.</b-alert>

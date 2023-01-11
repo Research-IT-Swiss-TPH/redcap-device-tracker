@@ -148,13 +148,15 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $result->close();
 
             $enum = [];
-            $paresdEnum = parseEnum($fieldMetaData->element_enum);
-            foreach ($paresdEnum as $value => $text) {
+            //  ENUM formatting
+            $parsedEnum = parseEnum($fieldMetaData->element_enum);
+            foreach ($parsedEnum as $value => $text) {
                 $enum[] = array(
                     "value" => $value,
                     "text" => $text
                 );
             }
+
 
             return array(
                 "name"  => $fieldMetaData->field_name,
