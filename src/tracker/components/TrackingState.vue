@@ -1,11 +1,10 @@
 <template>
-    <div class="tracking-state">
-        <small class="text-muted mb-1 mt-3">Tracking State</small>
-        <b-input-group size="sm" :prepend="state">
+    <b-form-group class="tracking-state">
+        <small class="text-muted mb-1 mt-3">Tracking State And Device</small>
+        <b-input-group size="sm" :prepend="fieldState">
             <b-form-input readonly style="width:0" :value="device || '--'" ></b-form-input>
         </b-input-group>
-
-    </div>  
+    </b-form-group>
 </template>
 <script>
 export default {
@@ -13,6 +12,15 @@ export default {
     props: {
         device: String,
         state: String
+    },
+    computed: {
+        fieldState: function() {
+            if(this.state == undefined) {
+                return "No state"
+            } else {
+                return this.state
+            }
+        }
     }
 }
 </script>

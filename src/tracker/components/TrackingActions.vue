@@ -8,7 +8,7 @@
             <b-button v-b-modal.tracking-modal :disabled="isDisabledReturn" class="btn-primaryrc"><i class="fas fa-history"></i> Return</b-button>
             <b-button v-b-modal.tracking-modal :disabled="isDisabledReset" class="btn-primaryrc"><i class="fas fa-power-off"></i> Reset</b-button>
         </b-button-group>
-        <trackingModal :field="field" :page="page" />        
+        <trackingModal  :tracking="tracking" :page="page" />        
     </div>
 </template>
 <script>
@@ -16,7 +16,7 @@
   export default {
     name: 'TrackingActions',
     props: {
-        field: Object,
+        tracking: Object,
         page: Object
     },
     components: {
@@ -24,13 +24,13 @@
     },
     computed: {
         isDisabledAssign: function() {
-            return !(this.field.state == 'no-device-selected')
+            return !(this.tracking.state == 'no-device-selected')
         },
         isDisabledReturn: function() {
-            return !(this.isDisabledAssign && this.field.state == 'assigned')
+            return !(this.isDisabledAssign && this.tracking.state == 'assigned')
         },
         isDisabledReset: function() {
-            return !(this.isDisabledReturn && this.field.state == 'returned')
+            return !(this.isDisabledReturn && this.tracking.state == 'returned')
       },        
     }
   }

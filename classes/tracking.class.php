@@ -6,6 +6,8 @@ use ExternalModules\ExternalModules;
 
 class Tracking {
 
+    public String $mode;
+    public String $id;
     public Int $project;
     public Int $event;
     public String $owner;
@@ -16,20 +18,27 @@ class Tracking {
     public String $timestamp;
 
     public function __construct($request = []) {
-        if(!empty($request) && is_array($request)) {
 
+        if(!empty($request) && is_array($request) ) {
+
+            
             $this->project  = PROJECT_ID;
+            
+            $this->mode     = htmlspecialchars($request["mode"]);
             $this->event    = htmlspecialchars($request["event_id"]);
             $this->owner    = htmlspecialchars($request["owner_id"]);
             $this->field    = htmlspecialchars($request["field_id"]);
             $this->device   = htmlspecialchars($request["device_id"]);
             $this->user     = htmlspecialchars($request["user_id"]);
-            $this->extra = [];
+
+            $this->id       = hash('sha256', $this->owner . "." . $this->device . "." . $this->project);
             $this->timestamp = date("Y-m-d H:i:s");
 
+            $this->extra = [];
             if(!empty($request["extra"]) && is_array(json_decode($request["extra"], true))) {
                 $this->extra = array_map("htmlspecialchars", json_decode($request["extra"], true));
             }
+
         } else {
             throw new Exception("Invalid Request");
         }
@@ -40,9 +49,10 @@ class Tracking {
      * 
      * 
      */
-    public function getDataDevices($action, $instance, $event) {
-        if($action == "assign-device") {
+    public function getDataDevices($instance, $event) {
+        if($this->mode == "assign-device") {
             $values = [
+                "session_tracking_id" => $this->id,
                 "session_owner_id" => $this->owner,
                 "session_project_id" => $this->project,
                 "session_device_state" => 1,
@@ -51,14 +61,14 @@ class Tracking {
             $instance++;
         }
 
-        if($action == "return-device") {
+        if($this->mode == "return-device") {
             $values = [
                 "session_device_state" => 2,
                 "session_return_date" => $this->timestamp
             ];
         }
 
-        if($action == "reset-device") {
+        if($this->mode == "reset-device") {
             $values = [
                 "session_device_state" => 0,
                 "session_reset_date" => $this->timestamp

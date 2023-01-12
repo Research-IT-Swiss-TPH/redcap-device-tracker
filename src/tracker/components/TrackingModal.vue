@@ -72,7 +72,7 @@
                <sweet-alert 
                 :action="modalMode"
                 :device="deviceId" 
-                :field="field.name" 
+                :field="field" 
                 :error="actionError"
                 />
             </div>
@@ -124,7 +124,9 @@
         }
     },
     props: {
-        field: Object,
+        field: String,
+        action: String,
+        tracking: Object,
         page: Object
     },
     methods: {
@@ -134,11 +136,13 @@
             } else {
                 this.isValidDevice = null
                 this.isValidating = true
+                //  trim blank spaces for usability noobs
+                this.userInput = this.userInput.trim()
                 this.axios({
                     params: {
                         action: 'validate-device',
                         device_id: this.userInput,
-                        tracking_field: this.field.name
+                        tracking_field: this.field
                     }
                 })
                 .then( response => {
@@ -160,11 +164,12 @@
         async processAction() {
             this.isProcessing = true
             this.axios({
-                params: {                        
-                        action: this.modalMode + '-device',
+                params: {        
+                        action: 'handle-tracking',           
+                        mode: this.modalMode + '-device',
                         event_id: this.page.event_id,
                         owner_id: this.page.record_id,
-                        field_id: this.field.name,
+                        field_id: this.field,
                         device_id: this.deviceId,
                         user_id: this.page.user_id,
                         extra: JSON.stringify(this.extra)
@@ -182,17 +187,13 @@
                 })
         },
 
-        foo(bar) {
-            console.log(bar)
-        },
-
         async loadAdditionalFields() {
 
             this.axios({
                 params: {                        
                         action: 'get-additional-fields',
                         mode: this.modalMode,
-                        field_id: this.field.name,
+                        field_id: this.field,
                     }
                 })
                 .then((response) => {
@@ -225,7 +226,7 @@
         complete() {
             //  We need to construct URL explicit, since in some cases REDCap adds an "auto" url parameters which seems broken..
             const loc = document.location
-            let dest = loc.protocol + '//' + loc.host + this.page.path + '?pid='+ this.page.project_id +'&id='+this.page.record_id+'&event_id='+this.page.event_id+'&page='+this.page.page_name            
+            let dest = loc.protocol + '//' + loc.host + this.page.path + '?pid='+ this.page.project_id +'&id='+this.page.record_id+'&event_id='+this.page.event_id+'&page='+this.page.name            
             location.href= dest
         },
 
@@ -237,15 +238,7 @@
     },
     computed: {
         modalMode: function() {
-            if(this.field.state == "no-device-selected") {
-                return "assign"
-            }
-            if(this.field.state == "assigned") {
-                return "return"
-            }
-            if(this.field.state = "returned") {
-                return "reset"
-            }
+            return this.action
         },
         
         isActionInit: function() {
@@ -265,7 +258,7 @@
             if(this.modalMode == 'assign') {
                 return this.userInput
             } else {
-                return this.field.device
+                return this.tracking.record_id
             }
         }
     },
