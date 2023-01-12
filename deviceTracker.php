@@ -4,7 +4,6 @@ namespace STPH\deviceTracker;
 
 use Exception;
 use REDCap;
-use ExternalModules\ExternalModules;
 
 //  used for development
 if( file_exists("vendor/autoload.php") ){
@@ -122,7 +121,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                         //  Prepend
                         target.parent().prepend(wrapper);
                         wrapper.show();
-                        //target.hide();
+                        target.hide();
                         console.log('Device Tracker initiated on field "' + tracking_field + '"');
                     });
                 })
@@ -167,101 +166,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
         $data["fields"] = $this->tracking_fields;
 
-        //  Fields data
-        //$data["field_emta"] = $this->getFieldMeta();
-
-        //$data["tracking_data"] = $this->getTrackingData();
-
         return json_encode($data);
 
     }
-
-
-    /**
-     * Get field meta to pass to Vue on instance creation
-     * Used to define field state and render appropriate views
-     * 
-     * @since 1.0.0
-     */
-    private function getFieldMeta() {
-
-        $fields = $this->tracking_fields;
-
-        $response = array();
-
-        // 0. Loop through tracking_fields
-        foreach ($fields as $key => $field) {
-           $fieldMeta = array();
-           $device_id_valid = "";
-           $device_id = "";
-           $device_state = "";
-           $device_session_state = null;
-
-           $params = [
-               'project_id'    => PROJECT_ID, 
-               'records' => $this->tracking_record,
-               'fields' => $field,
-               'return_format' => 'json'
-           ];
-           $device_id = reset(json_decode(REDCap::getData($params), true))[$field];
-           
-           //  1. Check if we have selected a device
-           if(empty($device_id)) {                
-               $device_state = "no-device-selected";
-           } else {
-
-               $pk = $this->getRecordIdField($this->getSystemSetting("devices-project"));
-               $params = [
-                   'project_id' => $this->getSystemSetting("devices-project"),
-                   'records' => [$device_id],
-                   'fields'=>array($pk),
-                   'return_format' => 'json'
-               ];
-               $device_id_valid = reset(json_decode(REDCap::getData($params), true))[$pk];
-
-               //  2. Check if we have a valid device
-               if(empty($device_id_valid)) {
-                   $device_state = "device-not-found";
-               } else {                    
-                   $params = array(
-                       'project_id' => $this->getSystemSetting("devices-project"),
-                       'records' => [$device_id],
-                       'filterLogic' => '[session_owner_id] = '.$this->tracking_record,
-                       'fields'=>array('session_device_state'),
-                       'return_format' => 'json'
-                    );
-                    $device_session_state = reset(json_decode(REDCap::getData($params), true))['session_device_state'];
-                    if($device_session_state == null) {
-                       $device_state = "no-session-created";
-                    } else {
-                       $device_state = $device_session_state;
-                    }
-               }
-           }
-
-           //  Switch case through calculated device_state and return field state
-           switch ($device_state) {
-               case 0:
-                   $fieldMeta["state"] =  "reset";  //  reset
-               break;                    
-               case 1:
-                   $fieldMeta["state"] =  "assigned";  //  assigned
-                   break;
-               case 2:
-                   $fieldMeta["state"] =  "returned";  //  returned
-                   break;
-               default:
-                   $fieldMeta["state"] =  $device_state;  //  undefined
-                   break;
-           }
-
-           $fieldMeta["name"] = $field;
-           $fieldMeta["device"] = $device_id_valid;
-           $response[] = $fieldMeta;
-           
-        }
-       return $response;
-   }    
 
 
     /**
@@ -293,10 +200,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         } 
 
         $session_tracking_id =  reset($data_t)[$field_id];
-
-        //$response = $session_tracking_id;
-        //$session_tracking_id = "cc5aba52de8074483933b8fb406c3233137db3770eb3212beaa8d2343f716033";
-        //  89037f03ddbe22e0ca7abd972d6a26b4478c707a81ffedf86b718376ee8a879a
        
         $filterLogic = "[session_tracking_id] = '" . $session_tracking_id . "'";
 
@@ -434,16 +337,17 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 }                
             }
 
-            //  Retrieve tracking info
-            $currentTrackingValue = $this->getCurrentTrackingInfo($tracking->project, $tracking->field, $tracking->owner);
+            //  Retrieve tracking ID
+            $currentTrackingId = $this->getCurrentTrackingId($tracking->project, $tracking->field, $tracking->owner);
+
             //  Do checks (different for every action)
             if($tracking->mode == 'assign-device') {
-                if(!empty($currentTrackingValue)) {
-                    throw new Exception("Invalid current tracking field. Expected NULL found: " . $currentTrackingValue);
+                if(!empty($currentTrackingId)) {
+                    throw new Exception("Invalid current tracking field. Expected NULL found: " . $currentTrackingId);
                 }
             } else {
-                if($currentTrackingValue != $tracking->device) {
-                    throw new Exception("Invalid current tracking field. Expected ".$tracking->device." found: " . $currentTrackingValue);
+                if($currentTrackingId != $tracking->id) {
+                    throw new Exception("Invalid current tracking field. Expected ".$tracking->id." found: " . $currentTrackingId);
                 } 
             }
 
@@ -484,7 +388,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             if($hasExtra) {
 
                 //  Validate
-                $trackings = $this->getTrackingForField($tracking->field);
+                //$trackings = $this->getTrackingForField($tracking->field);
 
                 // Validate extra fields with tracking field instructions
                 // Validate extra fields with actual fields in form
@@ -492,7 +396,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 foreach ($tracking->extra as $key => $value) {
                     //  push values to fields and add to $dataValues_t
                     $dataValues_t[$key] = $value;
-
                 }
                 
             }
@@ -521,13 +424,13 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $logId = $this->log(
                 "tracking-action",
                 [
-                    "mode"=> $tracking->mode,
+                    "action"=> $tracking->mode,
                     "field"=> $tracking->field,
                     "value"=> $tracking->device,
                     "record" => $tracking->owner,
                     "instance" => $currentInstanceId,
                     "user" => $tracking->user,
-                    "date"  => date('d-m-Y'),
+                    "date"  => $tracking->timestamp,
                     "valid" =>  true,
                     "extra" => json_encode($tracking->extra),
                     "timestamp" => $tracking->timestamp
@@ -708,13 +611,13 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return array($currentInstanceId, $currentInstanceState);
     }
 
-    private function getCurrentTrackingInfo($pid, $field, $id) {
+    private function getCurrentTrackingId($pid, $field, $id) {
         $result = $this->query(
                     "SELECT value FROM redcap_data WHERE project_id = ? AND field_name = ? AND record = ?", 
                     [ $pid, $field, $id ]
                 );
         return $result->fetch_object()->value;
-    }
+    }    
 
     /**
      * Get trackings in useful structure

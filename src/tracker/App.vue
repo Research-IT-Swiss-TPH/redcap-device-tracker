@@ -19,21 +19,24 @@
         <small class="text-muted mb-1 mt-3">
             Tracking Actions
         </small>
-        <b-button-group class="device-tracker-interface">
+        <b-button-group class="device-tracker-interface" v-if="hasActions">
             <b-button v-b-modal.tracking-modal :disabled="action!='assign'" class="btn-primaryrc"><i class="fas fa-plus-circle"></i> Assign</b-button>
             <b-button v-b-modal.tracking-modal :disabled="action!='return'" class="btn-primaryrc"><i class="fas fa-history"></i> Return</b-button>
             <b-button v-b-modal.tracking-modal :disabled="action!='reset'" class="btn-primaryrc"><i class="fas fa-power-off"></i> Reset</b-button>
         </b-button-group>
+        <b-alert v-else show variant="success">
+          Tracking finalized.
+        </b-alert>
         <trackingModal :action="action" :field="field" :tracking="tracking" :page="page" />
       </b-form-group>      
 
-      <!-- <tracking-log 
+      <tracking-log 
         v-if="logRows>0" 
         :rows="logRows" 
         :tracking="tracking"
         :field="field"
         :record="page.record_id" 
-      /> -->
+      />
 
     </div>
   </template>
@@ -111,29 +114,23 @@
             }            
         },
 
-        isDisabledAssign: function() {
-            return !(this.tracking.session_device_state == undefined )
+        hasActions: function() {
+          return (this.tracking.session_reset_date == "" || this.tracking.session_reset_date == undefined)
         },
-        isDisabledReturn: function() {
-            return !(this.isDisabledAssign && this.tracking.session_device_state == 'unavailable')
-        },
-        isDisabledReset: function() {
-            return !(this.isDisabledReturn && this.tracking.session_device_state == 'maintained')
-      },
       
-      logRows: function() {
-        if(this.tracking.state == 'assigned') {
-          return 1
+        logRows: function() {
+          if(this.tracking.session_device_state == 'available') {
+            return 1
+          }
+          if(this.tracking.session_device_state == 'unavailable') {
+            return 2
+          }
+          if(this.tracking.session_device_state == 'maintained') {
+            return 3
+          } else {
+            return 0
+          }
         }
-        if(this.tracking.state == 'returned') {
-          return 2
-        }
-        if(this.tracking.state == 'reset') {
-          return 3
-        } else {
-          return 0
-        }
-      }
     },
     mounted() {
       this.getTrackingData()

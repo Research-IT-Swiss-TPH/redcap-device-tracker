@@ -17,7 +17,13 @@ export default {
         fieldState: function() {
             if(this.state == undefined) {
                 return "No state"
-            } else {
+            }
+
+            // if(this.state == "available" && this.device !== undefined) {
+            //     return "Finalized"
+            // }
+            
+            else {
                 return this.state
             }
         }
