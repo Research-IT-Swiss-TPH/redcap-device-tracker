@@ -31,17 +31,36 @@ class Tracking {
             $this->device   = htmlspecialchars($request["device_id"]);
             $this->user     = htmlspecialchars($request["user_id"]);
 
+            //  Replace this in future with https://github.com/ramsey/uuid
             $this->id       = hash('sha256', $this->owner . "." . $this->device . "." . $this->project);
             $this->timestamp = date("Y-m-d H:i:s");
 
             $this->extra = [];
             if(!empty($request["extra"]) && is_array(json_decode($request["extra"], true))) {
                 $this->extra = array_map("htmlspecialchars", json_decode($request["extra"], true));
-            }
+            }            
+            
 
         } else {
             throw new Exception("Invalid Request");
         }
+    }
+
+
+    /**
+     * Needed for sync
+     * 
+     */
+    public function getDeviceStateByMode() {
+        if($this->mode == "assign-device" ) {
+            return 1;
+        }
+        if($this->mode == "return-device" ) {
+            return 2;
+        }
+        if($this->mode == "reset-device" ) {
+            return 0;
+        }        
     }
 
     /**

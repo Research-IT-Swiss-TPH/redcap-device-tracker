@@ -61,21 +61,17 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     /**
      * Check if is a valid page for tracking and sets parameters as variables
      * 
+     * @since 1.0.0
      */
     private function isValidTrackingPage() {
-        $isValidDataEntryPage = false;
-        $isValidFormWithTracking = false;
 
         //  Check if valid Data Entry page
         if($this->isPage('DataEntry/index.php') && isset( $_GET['id']) && defined('USERID')) {
 
-            $isValidDataEntryPage = true;
             $all_tracking_fields = $this->getAllTrackingFields();
 
             //  Check if is a valid Form Page with Tracking field
             if($_GET["page"] && in_array($_GET["page"], array_keys($all_tracking_fields))) {
-
-                $isValidFormWithTracking = true;
 
                 //  Set tracking variables
                 $this->tracking_record = $this->escape($_GET["id"]);
@@ -83,14 +79,18 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 $this->tracking_event = $this->escape($_GET["event_id"]);
                 $this->tracking_fields = $all_tracking_fields[$this->tracking_page];
 
+                return true;
+
             }
         }
 
-        return $isValidDataEntryPage && $isValidFormWithTracking;       
+        return false;
+    
     }
 
     /**
      * Render HTML and Javascript to insert Vue Instance
+     * 
      * 
      * @since 1.0.0
      */
@@ -135,15 +135,14 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         </script>
         <!-- actual vue scripts -->
         <script src="<?= $this->getUrl('./dist/appTracker.js') ?>"></script>
-        <?php        
-
+        <?php
     }
 
 
     /**
      * Get data from backend to pass into vue instance(s)
      * 
-     * 
+     * @since 1.0.0
      */
     private function getDataFromBackend() {
         
@@ -159,7 +158,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             "user_id"    => USERID,
             "project_id" => PROJECT_ID,
             "record_id"  => $this->tracking_record,
-            "name"  => $this->tracking_page,
+            "name"       => $this->tracking_page,
             "event_id"   => $this->tracking_event
             
         ];
@@ -172,7 +171,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
 
 
-    
     /**
      * PUBLIC METHODS used via AJAX/AXIOS
      * 
@@ -214,10 +212,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         );
 
         $json = REDCap::getData($params);
-
-        $data = reset(json_decode($json));
-
-        $response = $data;
+        $response = reset(json_decode($json));
 
         $this->sendResponse($response); 
     }     
@@ -266,7 +261,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * Request Handler Methods
      * Can be accessed via AJAX/AXIOS
      * 
-     * 
+     * @since 1.0.0
      */
     public function validateDevice(string $device_id, string $trackingField) {
 
@@ -288,7 +283,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     /**
      * Get Additional Fields for different actions
      * 
-     * 
+     * @since 1.0.0
      */
     public function getAdditionalFields($mode, $field) {
 
@@ -376,25 +371,34 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
              * 
              */
 
-            //  to do: additional fields that are being piped (different for every action)
-            //  scenario: user can add additional fields over module settings (text, date) which will be rendered
-            //  into action-modal. Any entry will be retrieved through ajax (no strict validation) and piped into
-            //  relevant tracking project fields. Mechanism to save data will first take ajax params, fetch settings
-            //  match them and finally run a getAdditionalFieldData() method 
-            //  also use flag: $hasExtra = false;
+
+            //  Get tracking settings
+            $tracking_settings = [];
+            foreach ($this->getSubSettings('trackings') as $key => $settings) {
+                if($settings["tracking-field"] == $tracking->field) {
+                    $tracking_settings =  $settings;
+                    break;
+                }
+            }
+
+            //  Initialize data array for tracking
+            $dataValues_t = [];
+
+            //  Save tracking id into tracking project
+            if($tracking->mode == 'assign-device') {
+                $dataValues_t[$tracking->field] = $tracking->id;                
+            }            
 
             //  Check if has extra fields
-            $hasExtra = !empty($tracking->extra);
-            $dataValues_t = [];
-            
+            // to do: validate if extras are enabled !
+            $hasExtra = !empty($tracking->extra);            
             if($hasExtra) {
 
                 //  To Do: Validate
-                //$trackings = $this->getTrackingForField($tracking->field);
-
                 // Validate extra fields with tracking field instructions
                 // Validate extra fields with actual fields in form
 
+                //  Add extra fields to data to be saved
                 foreach ($tracking->extra as $key => $value) {
                     //  push values to fields and add to $dataValues_t
                     $dataValues_t[$key] = $value;
@@ -402,13 +406,41 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 
             }
 
-            if($tracking->mode == 'assign-device') {
-                //  add additional values here...
-                $dataValues_t[$tracking->field] = $tracking->id;
+            //  Check if sync is enabled
+            $hasSync = false;
+            if($tracking_settings["use-sync-data"] == true) {
+                $hasSync = true;
             }
 
-            //  Perform actual save only if we have data for the specific action to be saved
-            if($tracking->mode == 'assign-device' || $tracking->mode != 'assign-device' && $hasExtra) {
+            //  to do: process this through tracking class method (need module instance inside tracking class)
+            //  add warnings when setting is empty
+            if($hasSync) {
+
+                $sync_data = [];
+
+                if($tracking->mode == 'assign-device' && !empty($tracking_settings["snyc-date-assign"])) {
+                    $sync_data[$tracking_settings["snyc-date-assign"]] = $tracking->timestamp;
+                }
+                
+                if($tracking->mode == 'return-device' && !empty($tracking_settings["snyc-date-return"]) ) {
+                    $sync_data[$tracking_settings["snyc-date-return"]] = $tracking->timestamp;
+                }
+
+                if($tracking->mode == 'reset-device' && !empty($tracking_settings["snyc-date-reset"]) ) {
+                    $sync_data[$tracking_settings["snyc-date-reset"]] = $tracking->timestamp;
+                }                
+
+                $sync_data[$tracking_settings["snyc-state"]] = $tracking->getDeviceStateByMode();
+                
+                //  Add sync fields to data to be saved
+                foreach ($sync_data as $key => $value) {
+                    //  push values to fields and add to $dataValues_t
+                    $dataValues_t[$key] = $value;
+                }
+            }       
+
+            //  Perform actual save only if we have data for the specific action to be saved or sync in enabled
+            if($tracking->mode == 'assign-device' || ($tracking->mode != 'assign-device' && $hasExtra) || $hasSync) {
                 $data_t = [ $tracking->owner => [$tracking->event => $dataValues_t ] ];
                 
                 $params_t = [
@@ -423,6 +455,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 }                
             }
 
+            //  Write to log
             $logId = $this->log(
                 "tracking-action",
                 [
@@ -446,7 +479,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
             //  Rollback database
             $this->rollbackDbTx();
-
             
             //  Handle Error
             //  Save to logs
@@ -469,7 +501,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             "saved_devices" => $saved_d,
             "saved_tracking" => $saved_t ?? [],
             "log_id" => $logId,
-            "extra" => $tracking->extra
+            "extra" => $tracking->extra,
+            "sync" => $sync_data,
+            "settings" => $tracking_settings
         );
 
         $this->sendResponse($response);         
@@ -479,6 +513,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * Provide logs for monitoring
      * Limits to project context
      * 
+     * @since 1.0.0
      */
     public function provideLogs() {
 
@@ -517,7 +552,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
     /**
      * Get Tracking for Field
-     * (Helper)
+     * 
+     * @since 1.0.0
      */
     private function getTrackingForField($field) {
         $trackings = $this->getSubSettings('trackings');
@@ -535,7 +571,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     /**
      * Get REDCap field meta data from redcap_meta_data table
      * 
-     * 
+     * @since 1.0.0
      */
     private function getFieldMetaData($field) {
         $sql = 'SELECT * FROM redcap_metadata WHERE project_id = ? AND field_name = ?';
@@ -556,7 +592,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 );
             }
 
-
             return array(
                 "name"  => $fieldMetaData->field_name,
                 "type"  => $fieldMetaData->element_type,
@@ -575,6 +610,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * no data will be saved in any of the save procedures
      * https://www.mysqltutorial.org/mysql-transaction.aspx
      * 
+     * 
+     * @since 1.0.0
      */
     private function beginDbTx() {    
         $this->query("SET autocommit = 0;", []);
@@ -613,6 +650,11 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return array($currentInstanceId, $currentInstanceState);
     }
 
+    /**
+     * Get current tracking id from database
+     * 
+     * @since 1.0.0
+     */
     private function getCurrentTrackingId($pid, $field, $id) {
         $result = $this->query(
                     "SELECT value FROM redcap_data WHERE project_id = ? AND field_name = ? AND record = ?", 
@@ -639,6 +681,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     /**
      * Get device types
      * Return a list of devices types that are defined in field setting
+     * 
+     * 
+     * @since 1.0.0
      */
     private function getDeviceTypesForField(string $field) :array {
         $trackings = $this->getSubSettings('trackings');
@@ -656,6 +701,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     /**
      * Get Logs for a tracking/field pair
      * 
+     * @since 1.0.0
      */
     public function getTrackingLogs($record, $field) {
 
@@ -726,10 +772,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         die();
     }
 
+
     /**
      * Duplicate of escape method from ExternalModules class, since it has been added in v13.1.2 and might not be supported
      * on most insitutions
      * 
+     * @since 1.0.0
      */
 	public static function escape($value){
 		$type = gettype($value);

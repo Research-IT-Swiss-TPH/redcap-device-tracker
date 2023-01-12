@@ -51,6 +51,47 @@
                     "type": "text"
                 },
                 {
+                    "key": "use-sync-data",
+                    "type": "checkbox",
+                    "name": "Use device data syncing?"
+                },
+                {
+                    "key": "snyc-state",
+                    "type": "field-list",
+                    "name": "Field to sync 'session_device_state'",
+                    "branchingLogic": {
+                        "field": "use-sync-data",
+                        "value": true
+                    }                    
+                },
+                {
+                    "key": "snyc-date-assign",
+                    "type": "field-list",
+                    "name": "Field to sync 'session_assign_date'",
+                    "branchingLogic": {
+                        "field": "use-sync-data",
+                        "value": true
+                    }                    
+                },  
+                {
+                    "key": "snyc-date-return",
+                    "type": "field-list",
+                    "name": "Field to sync 'session_return_date'",
+                    "branchingLogic": {
+                        "field": "use-sync-data",
+                        "value": true
+                    }                    
+                },  
+                {
+                    "key": "snyc-date-reset",
+                    "type": "field-list",
+                    "name": "Field to sync 'session_reset_date'",
+                    "branchingLogic": {
+                        "field": "use-sync-data",
+                        "value": true
+                    }
+                },                                                  
+                {
                     "key": "use-additional-assign",
                     "type": "checkbox",
                     "name": "Use additional fields during 'assign' action?"
