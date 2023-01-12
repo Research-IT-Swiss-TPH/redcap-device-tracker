@@ -69,11 +69,6 @@
                             "key": "add-field-assign",
                             "type": "field-list",
                             "name": "Additional Field"
-                        },
-                        {
-                            "key": "map-field-assign",
-                            "type": "text",
-                            "name": "Map additional field to device instance data"
                         }
                     ]
                 },                
@@ -96,11 +91,6 @@
                             "key": "add-field-return",
                             "type": "field-list",
                             "name": "Additional Field"
-                        },
-                        {
-                            "key": "map-field-return",
-                            "type": "text",
-                            "name": "Map additional field to device instance data"
                         }
                     ]
                 },                
@@ -123,11 +113,6 @@
                             "key": "add-field-reset",
                             "type": "field-list",
                             "name": "Additional Field"
-                        },
-                        {
-                            "key": "map-field-reset",
-                            "type": "text",
-                            "name": "Map additional field to device instance data"
                         }
                     ]
                 }

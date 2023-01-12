@@ -171,6 +171,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }
 
 
+
+    
     /**
      * PUBLIC METHODS used via AJAX/AXIOS
      * 
@@ -387,7 +389,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             
             if($hasExtra) {
 
-                //  Validate
+                //  To Do: Validate
                 //$trackings = $this->getTrackingForField($tracking->field);
 
                 // Validate extra fields with tracking field instructions
