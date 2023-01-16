@@ -1,34 +1,64 @@
 <template>
     <div class="tracking-wrapper">
 
-      <tracking-branding />
-
-      <b-form-group class="tracking-id">
-        <small class="text-muted mb-1 mt-3">Tracking ID</small>
-        <b-input-group size="sm">
-            <b-form-input readonly :value="tracking.session_tracking_id || '--'" ></b-form-input>
-        </b-input-group>
-      </b-form-group>
-
-      <tracking-state
-        :device="tracking.record_id" 
-        :state="tracking.session_device_state"
-      />
+      <tracking-header :state="tracking.session_device_state" />
 
       <b-form-group class="tracking-actions">
         <small class="text-muted mb-1 mt-3">
             Tracking Actions
         </small>
-        <b-button-group class="device-tracker-interface" v-if="hasActions">
+        <b-skeleton v-if="isLoading" type="input"></b-skeleton>
+        <div class="device-tracker-interface" v-else>
+          <b-button-group v-if="hasActions"  >
             <b-button v-b-modal.tracking-modal :disabled="action!='assign'" class="btn-primaryrc"><i class="fas fa-plus-circle"></i> Assign</b-button>
             <b-button v-b-modal.tracking-modal :disabled="action!='return'" class="btn-primaryrc"><i class="fas fa-history"></i> Return</b-button>
             <b-button v-b-modal.tracking-modal :disabled="action!='reset'" class="btn-primaryrc"><i class="fas fa-power-off"></i> Reset</b-button>
-        </b-button-group>
-        <b-alert v-else show variant="success">
-          Tracking finalized.
-        </b-alert>
+          </b-button-group>
+          <b-alert v-else show variant="info" class="actions-final-alert">
+            There are no more actions to be performed.
+          </b-alert>
+        </div>
         <trackingModal :action="action" :field="field" :tracking="tracking" :page="page" />
-      </b-form-group>      
+      </b-form-group>
+
+      <b-form-group class="tracking-id">
+        <small class="text-muted mb-1 mt-3">Tracking ID</small>
+        <b-skeleton v-if="isLoading" type="input"></b-skeleton>
+        <b-input-group v-else size="sm">
+            <b-form-input 
+              readonly 
+              :value="tracking.session_tracking_id || '--'" >
+            </b-form-input>
+            <b-input-group-append >
+                <b-button
+                  copySource="Tracking ID"
+                  :disabled="!tracking.session_tracking_id" 
+                  v-clipboard:copy="tracking.session_tracking_id"
+                  v-clipboard:success="onCopy">
+                    <i class="fa-regular fa-copy"></i>
+                </b-button>
+            </b-input-group-append>
+        </b-input-group>
+      </b-form-group>
+
+      <b-form-group class="tracking-device">
+        <small class="text-muted mb-1 mt-3">Tracking Device</small>
+        <b-skeleton v-if="isLoading" type="input"></b-skeleton>
+        <b-input-group v-else size="sm">
+            <b-form-input 
+              readonly :value="tracking.record_id || '--'" >
+            </b-form-input>
+            <b-input-group-append >
+                <b-button 
+                  copySource="Tracking Device"
+                  :disabled="!tracking.record_id"
+                  v-clipboard:copy="tracking.record_id"
+                  v-clipboard:success="onCopy">
+                    <i class="fa-regular fa-copy"></i>
+                </b-button>
+            </b-input-group-append>            
+        </b-input-group>
+      </b-form-group>
 
       <tracking-log 
         v-if="logRows>0" 
@@ -42,7 +72,7 @@
   </template>
   
   <script>
-  import TrackingBranding from './components/TrackingBranding.vue'
+  import TrackingHeader from './components/TrackingHeader.vue'
   import TrackingState from './components/TrackingState.vue'
   import TrackingLog from './components/TrackingLog.vue'
   import TrackingModal from './components/TrackingModal.vue'
@@ -50,14 +80,15 @@
   export default {
     name: 'App',
     components: {
-      TrackingBranding,
+      TrackingHeader,
       TrackingState,
       TrackingModal,
       TrackingLog
     },
     data() {
       return {
-        tracking: {}
+        tracking: {},
+        isLoading: true,
       }
     },
     props: {
@@ -87,7 +118,16 @@
                     console.log(e.message)
                 })
                 .finally( () => {
+                  this.isLoading = false
                 })        
+      },
+
+      onCopy: function (e) {
+        this.$bvToast.toast(`Copied "${e.trigger.attributes.copySource.nodeValue}" into clipboard.`, {
+          title: 'Success',
+          autoHideDelay: 1000,
+          variant: 'success'
+        })
       },
 
       getMessage: function() {
@@ -119,16 +159,16 @@
         },
       
         logRows: function() {
-          if(this.tracking.session_device_state == 'available') {
-            return 1
+          if(this.tracking.session_device_state == 'available' && this.hasActions) {
+            return 0
           }
           if(this.tracking.session_device_state == 'unavailable') {
-            return 2
+            return 1
           }
           if(this.tracking.session_device_state == 'maintained') {
-            return 3
+            return 2
           } else {
-            return 0
+            return 3
           }
         }
     },
@@ -138,6 +178,10 @@
   }
   </script>
   <style scoped>
+    form#form input[type="text"].form-control {
+      max-width: none;
+      width:auto;
+    }
     .tracking-wrapper {
      margin-top:5px;
       margin-bottom: 5px;
@@ -145,13 +189,17 @@
       max-width: 90%;
       width:90;
     }
-    .device-tracker-branding {
-      position: absolute;
-      right: 0;
-      color: grey;
-    }
+
     .device-tracker-branding:hover {
       color: #F00000;
+    }
+
+    .device-tracker-interface .btn-group{
+      width: 100%;
+    }
+
+    .actions-final-alert {
+      margin-bottom: 0;
     }
   </style>
   

@@ -59,7 +59,4 @@
 }
 </script>
 <style scoped>
-.tracking-log-table {
-    margin-top: 15px;
-}
 </style>

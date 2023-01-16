@@ -1,7 +1,7 @@
 <template>
     <b-form-group class="tracking-state">
-        <small class="text-muted mb-1 mt-3">Tracking State And Device</small>
-        <b-input-group size="sm" :prepend="fieldState">
+        <small class="text-muted mb-1 mt-3">Tracking Device</small>
+        <b-input-group size="sm">
             <b-form-input readonly style="width:0" :value="device || '--'" ></b-form-input>
         </b-input-group>
     </b-form-group>
