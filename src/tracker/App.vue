@@ -167,8 +167,12 @@
           }
           if(this.tracking.session_device_state == 'maintained') {
             return 2
-          } else {
+          } 
+          if(this.tracking.session_device_state == 'available' && this.tracking.session_reset_date){
             return 3
+          }
+          else {
+            return 0
           }
         }
     },

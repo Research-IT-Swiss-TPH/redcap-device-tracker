@@ -31,10 +31,6 @@ export default {
                     return "fa-regular fa-circle-check"
                     break;
             }
-
-            if(this.state == 'available') {
-
-            }
             
         }
     }
