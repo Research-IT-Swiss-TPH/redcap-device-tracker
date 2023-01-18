@@ -77,7 +77,7 @@ class Tracking {
                 "session_device_state" => 1,
                 "session_assign_date" => $this->timestamp
             ];
-            $instance++;
+            //$instance++;
         }
 
         if($this->mode == "return") {

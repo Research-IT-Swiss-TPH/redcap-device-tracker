@@ -50,6 +50,33 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     * @since 1.0.0
     */
     public function redcap_every_page_top($project_id = null) {
+
+        //$device_id = "A10003";
+
+
+        //dump($this->getSessionData($device_id));
+
+        // $data = REDCap::getData(array(
+        //     'return_format' => 'array', 
+        //     'project_id' => $this->devices_project_id,
+        //     'records' => $device_id,            
+        //     'fields' => ["session_device_state", "record_id", "repeat_instances"],
+        //     'exportDataAccessGroups' => true
+        // ));
+
+        // dump($data);
+        // //  get last instance id
+        // $sessions = $data[$device_id]["repeat_instances"][$this->devices_event_id]["sessions"];
+        // dump($sessions);
+
+        // $instance_ids = array_keys($sessions);
+        // dump($instance_ids);
+
+        // $lastInstanceId = max($instance_ids);
+        // dump($lastInstanceId);
+
+
+
       
         if($this->isValidTrackingPage()) {
             $this->renderTrackingInterface();
@@ -317,24 +344,33 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $this->beginDbTx();
 
             //  Retrieve current device instance info (assuming that current instance is last instance)
-            list($currentInstanceId, $currentInstanceState) = $this->getCurrentDeviceInfo($tracking->device);
-            //  Do checks (different for every action)
+            //  list($currentInstanceId, $currentInstanceState) = $this->getCurrentDeviceInfo($tracking->device);
+            list($lastSessionId, $lastSessionState, $isLastSessionUntracked) = $this->getSessionData($tracking->device);
+            //  Do checks and determine ID of session to bes saved (different for every action)
             if($tracking->mode == 'assign') {
-                if( ($currentInstanceId == 0 && $currentInstanceState != NULL) || $currentInstanceId != 0 && $currentInstanceState != 0) {
-                    throw new Exception ("Invalid current instance state. Expected 0, found: " . $currentInstanceId);
+                if( ($lastSessionState != "") && ($lastSessionState != 0) ) {
+                    throw new Exception ("Invalid current instance state. Expected 0, found: " . $lastSessionState);
+                }
+
+                if( ($lastSessionState != "") && $isLastSessionUntracked) {
+                    $saveSessionId = $lastSessionId;
+                } else {
+                    $saveSessionId = $lastSessionId + 1;
                 }
             }
 
             if($tracking->mode == 'return') {
-                if( $currentInstanceState != 1) {
-                    throw new Exception ("Invalid current instance state. Expected 1, found: " . $currentInstanceId);
+                if( $lastSessionState != 1) {
+                    throw new Exception ("Invalid current instance state. Expected 1, found: " . $lastSessionState);
                 }
+                $saveSessionId = $lastSessionId;
             }
 
             if($tracking->mode == 'reset') {
-                if( $currentInstanceState != 2) {
-                    throw new Exception ("Invalid current instance state. Expected 2, found: " . $currentInstanceId);
-                }                
+                if( $lastSessionState != 2) {
+                    throw new Exception ("Invalid current instance state. Expected 2, found: " . $lastSessionState);
+                }
+                $saveSessionId = $lastSessionId;
             }
 
             //  Retrieve tracking ID
@@ -359,7 +395,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Prepare parameters for actual saving
             $params_d = [
                 'project_id' => $this->devices_project_id,
-                'data' => $tracking->getDataDevices($currentInstanceId, $this->devices_event_id)
+                'data' => $tracking->getDataDevices($saveSessionId, $this->devices_event_id)
             ];
             //  Perform actual saving
             $saved_d = REDCap::saveData($params_d);
@@ -465,7 +501,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                     "field"=> $tracking->field,
                     "value"=> $tracking->device,
                     "record" => $tracking->owner,
-                    "instance" => $currentInstanceId,
+                    "session" => $lastSessionId,
                     "user" => $tracking->user,
                     "date"  => $tracking->timestamp,
                     "valid" =>  true,
@@ -658,6 +694,33 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     private function rollbackDbTx() {
         $this->query("ROLLBACK;", []);
         $this->query("SET autocommit = 1;", []);
+    }
+
+    private function getSessionData($device_id) {
+        //  Fetch all data for device
+        $data = REDCap::getData(array(
+            'return_format' => 'array', 
+            'project_id' => $this->devices_project_id,
+            'records' => $device_id,
+            //'fields' => ["session_device_state"],
+            'exportDataAccessGroups' => true
+        ));
+
+        //  Find last instance for relevant device (could be that instances have been deleted inbetween, so counting is bad )        
+        $sessions = (array) $data[$device_id]["repeat_instances"][$this->devices_event_id]["sessions"];
+        //  First check if we have any session, set 0 if not
+        if(count($sessions) == 0) {
+            $lastSessionId = 0;
+        } else {
+            $lastSessionId = max(array_keys($sessions));
+        }
+        //  Find sessions state of last id
+        $lastSessionState  = $sessions[$lastSessionId]["session_device_state"];
+
+        //  Check if last session is empty 
+        $isLastSessionUntracked = empty($sessions[$lastSessionId]["session_tracking_id"]);
+
+        return array($lastSessionId, $lastSessionState, $isLastSessionUntracked);
     }
 
     /**
