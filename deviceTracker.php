@@ -719,14 +719,25 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     private function getDeviceTypesForField(string $field) :array {
         $trackings = $this->getSubSettings('trackings');
+        $str = "";
         foreach ($trackings as $key => $settings) {
             if($settings['tracking-field'] == $field) {
-                if(!empty($settings["device-types"])) {
-                    return explode(",", trim($settings["device-types"]) );
+                //  Return empty array if types not set
+                if($settings["device-types"] == "") {
+                    return [];                    
                 } 
+                $str = $settings["device-types"];
+                break;
             }
         }
-        return [];
+
+        //  Check if has comma separation and explode with trim
+        if( strpos($str, ",") >= -1) {
+            return array_map('trim', explode(',', $str));
+        } else {
+            return array(trim($str));
+        }
+        
     }
 
 
