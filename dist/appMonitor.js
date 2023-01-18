@@ -39,11 +39,67 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   name: 'AppMonitor',
+  props: {
+    page: Object
+  },
   data: function data() {
     return {
+      isRemoving: false,
+      totalRemoved: null,
       isBusy: false,
       sortBy: 'log_id',
       sortDesc: true,
@@ -109,6 +165,35 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
           }
         }, _callee);
       }))();
+    },
+    validateLogs: function validateLogs(bvModalEvent) {
+      var _this2 = this;
+      return _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
+        return _regeneratorRuntime().wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                bvModalEvent.preventDefault();
+                _this2.isRemoving = true;
+                _this2.axios({
+                  params: {
+                    action: 'validate-logs'
+                  }
+                }).then(function (response) {
+                  _this2.totalRemoved = response.data.total;
+                  //console.log(response.data)
+                })["catch"](function (e) {
+                  console.log(e.message + ": " + e.response.data.error);
+                })["finally"](function () {
+                  _this2.isRemoving = false;
+                });
+              case 3:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2);
+      }))();
     }
   },
   computed: {
@@ -117,7 +202,12 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     }
   },
   mounted: function mounted() {
+    var _this3 = this;
     this.logProvider();
+    this.$root.$on('bv::modal::hide', function (bvEvent, modalId) {
+      _this3.isRemoving = false;
+      _this3.totalRemoved = null;
+    });
   }
 });
 
@@ -49972,6 +50062,140 @@ var render = function () {
           expression: "currentPage",
         },
       }),
+      _vm._v(" "),
+      _vm.page.project_id != null && _vm.page.super_user == true
+        ? _c(
+            "div",
+            [
+              _c(
+                "b-button",
+                {
+                  directives: [
+                    {
+                      name: "b-modal",
+                      rawName: "v-b-modal.validate-logs-modal",
+                      modifiers: { "validate-logs-modal": true },
+                    },
+                  ],
+                  attrs: { variant: "warning" },
+                },
+                [_vm._v("Validate Logs")]
+              ),
+            ],
+            1
+          )
+        : _c("b-alert", { attrs: { variant: "warning", show: "" } }, [
+            _c("b", [_vm._v("Validating logs")]),
+            _vm._v(" is currenlty only available on project level."),
+          ]),
+      _vm._v(" "),
+      _c(
+        "b-modal",
+        {
+          attrs: {
+            centered: "",
+            title: "Validate Logs",
+            "ok-title": "Remove",
+            "ok-variant": "danger",
+            id: "validate-logs-modal",
+          },
+          on: { ok: _vm.validateLogs },
+          scopedSlots: _vm._u([
+            {
+              key: "modal-footer",
+              fn: function (ref) {
+                var ok = ref.ok
+                var cancel = ref.cancel
+                var hide = ref.hide
+                return [
+                  _c(
+                    "div",
+                    [
+                      !_vm.isRemoving && _vm.totalRemoved == null
+                        ? _c(
+                            "b-button",
+                            {
+                              staticClass: "float-right",
+                              attrs: { variant: "danger" },
+                              on: { click: ok },
+                            },
+                            [
+                              _vm._v(
+                                "\n                Remove\n                "
+                              ),
+                            ]
+                          )
+                        : _vm._e(),
+                      _vm._v(" "),
+                      !_vm.isRemoving && _vm.totalRemoved == null
+                        ? _c(
+                            "b-button",
+                            {
+                              staticClass: "float-right",
+                              on: { click: cancel },
+                            },
+                            [
+                              _vm._v(
+                                "\n                Cancel\n                "
+                              ),
+                            ]
+                          )
+                        : _vm._e(),
+                      _vm._v(" "),
+                      _vm.totalRemoved != null
+                        ? _c("b-button", { on: { click: cancel } }, [
+                            _vm._v(
+                              "\n                    Close\n                "
+                            ),
+                          ])
+                        : _vm._e(),
+                    ],
+                    1
+                  ),
+                ]
+              },
+            },
+          ]),
+        },
+        [
+          !_vm.isRemoving && _vm.totalRemoved == null
+            ? _c("div", [
+                _vm._v(
+                  "\n            This action will permanently delete all invalid logs. Are you sure?\n        "
+                ),
+              ])
+            : _vm.totalRemoved > 0
+            ? _c(
+                "div",
+                [
+                  _c("b-alert", { attrs: { variant: "success", show: "" } }, [
+                    _vm._v("Removed "),
+                    _c("b", [
+                      _vm._v(
+                        _vm._s(_vm.totalRemoved) + " invalid log entries."
+                      ),
+                    ]),
+                  ]),
+                ],
+                1
+              )
+            : _vm.totalRemoved == 0
+            ? _c(
+                "div",
+                [
+                  _c("b-alert", { attrs: { variant: "warning", show: "" } }, [
+                    _vm._v("All logs are valid. Nothing removed."),
+                  ]),
+                ],
+                1
+              )
+            : _c("div", [
+                _vm._v(
+                  "\n                Removing...                \n        "
+                ),
+              ]),
+        ]
+      ),
     ],
     1
   )
@@ -66085,6 +66309,7 @@ __webpack_require__.r(__webpack_exports__);
 
 //  Constants set via Backend
 var baseURL = stph_dt_getBaseUrlFromBackend();
+var page = stph_dt_getPageInfoFromBackend();
 
 //  Axios  
 
@@ -66101,7 +66326,11 @@ vue__WEBPACK_IMPORTED_MODULE_2__["default"].use(bootstrap_vue__WEBPACK_IMPORTED_
 //  Create Vue Instance and mount our module page container
 new vue__WEBPACK_IMPORTED_MODULE_2__["default"]({
   render: function render(h) {
-    return h(_App_vue__WEBPACK_IMPORTED_MODULE_0__["default"]);
+    return h(_App_vue__WEBPACK_IMPORTED_MODULE_0__["default"], {
+      props: {
+        page: page
+      }
+    });
   }
 }).$mount('#STPH_DT_MONITOR');
 })();

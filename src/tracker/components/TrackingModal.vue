@@ -276,7 +276,6 @@
         })
 
         this.$root.$on('bv::modal::hide', (bvEvent, modalId) => {
-
             this.resetModal()
         })
     }

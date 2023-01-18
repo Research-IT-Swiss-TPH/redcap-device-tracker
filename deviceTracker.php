@@ -51,7 +51,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     * @since 1.0.0
     */
     public function redcap_every_page_top($project_id = null) {
-       
+      
         if($this->isValidTrackingPage()) {
             $this->renderTrackingInterface();
         }
@@ -542,6 +542,91 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
     }
 
+    /**
+     * Validate Logs
+     * 
+     */
+    public function validateLogs() {
+
+
+        try {
+                
+            $invalidLogs = array_merge(
+                $this->getInvalidLogsByAction('assign'),
+                $this->getInvalidLogsByAction('return'),
+                $this->getInvalidLogsByAction('reset')
+            );
+
+            if(count($invalidLogs) > 0) {
+                $invalidLogIds = implode(",", $invalidLogs);
+
+                $totalAffectedRows = $this->removeLogs('log_id in ('.$invalidLogIds.')', []);    
+            }
+            else {
+                $this->sendResponse(array("total" => 0));
+            }                            
+            $this->sendResponse(array("total" => $totalAffectedRows));
+        } catch (\Throwable $th) {
+            $this->sendError(500, $th->getMessage());
+        }
+            
+
+
+    }
+
+    /**
+     * Query the database for log entries those timestamps do not match any of
+     * session_assign_date, session_return_date, session_reset_date of 
+     * existing device data.
+     * 
+     * To do: Make parameters dynamic!
+     * 
+     */
+    private function getInvalidLogsByAction($term) {
+        
+        $project_id_devices= $this->devices_project_id;
+        $external_module_id = 1;
+        $action = $term . '-device';
+        $field_name = 'session_' . $term . '_date';
+
+        $project_id_tracking = PROJECT_ID;
+
+        $sql_invalid_action_logs = "SELECT l.log_id, l.timestamp, s.instance FROM redcap_external_modules_log l JOIN (
+
+            SELECT A.log_id, A.value AS action, B.value AS instance, C.value AS device 
+            FROM redcap_external_modules_log_parameters A, redcap_external_modules_log_parameters B, redcap_external_modules_log_parameters C 
+            WHERE A.log_id=B.log_id AND B.log_id=C.log_id 
+            AND a.name = 'action' AND B.name = 'instance' AND C.name = 'value'
+            ) s ON l.log_id = s.log_id 
+        
+        WHERE l.project_id = ? AND l.external_module_id = ? 
+        AND s.action = ?
+        
+        AND DATE_FORMAT( l.timestamp , '%Y-%m-%d %k:%i:%s') <> (SELECT IF( 
+            ((SELECT COUNT(VALUE) FROM redcap_data WHERE project_id = ? AND field_name = ?  AND IFNULL(instance, 0) = s.instance) = 0),
+            '', (SELECT VALUE FROM redcap_data WHERE project_id = ? AND field_name = ? AND IFNULL(instance, 0) = s.instance)
+                )
+            )";
+
+        $result = $this->query($sql_invalid_action_logs, 
+            [
+                $project_id_devices,
+                $external_module_id,
+                $action,
+                $project_id_tracking,
+                $field_name,
+                $project_id_tracking,
+                $field_name
+                ]
+        );
+
+        $logs = [];
+        while( $log = $result->fetch_assoc() ) {
+            $logs[] = $log["log_id"];
+        }
+
+        return $logs;
+    }
 
 
     /**

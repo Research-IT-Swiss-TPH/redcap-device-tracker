@@ -89,6 +89,11 @@ if ($_REQUEST['action'] == 'provide-logs')  {
     $module->provideLogs();
 }
 
+if ($_REQUEST['action'] == 'validate-logs') {
+    $module->validateLogs();
+}
+
+
 
 //  General Error handler
 else {

@@ -3,6 +3,7 @@ import App from './App.vue'
 
 //  Constants set via Backend
 var baseURL = stph_dt_getBaseUrlFromBackend();
+var page    = stph_dt_getPageInfoFromBackend();
 
 //  Axios  
 import axios from 'axios'
@@ -19,6 +20,10 @@ Vue.use(BootstrapVue)
 
 //  Create Vue Instance and mount our module page container
 new Vue({
-    render: h => h(App)
+    render: h => h(App, {
+      props: {
+        page: page
+      }
+    })
   })
 .$mount('#STPH_DT_MONITOR');
