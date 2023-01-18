@@ -56,7 +56,7 @@
                     "name": "Use device data syncing?"
                 },
                 {
-                    "key": "snyc-state",
+                    "key": "sync-state",
                     "type": "field-list",
                     "name": "Field to sync 'session_device_state'",
                     "branchingLogic": {
@@ -65,7 +65,7 @@
                     }                    
                 },
                 {
-                    "key": "snyc-date-assign",
+                    "key": "sync-date-assign",
                     "type": "field-list",
                     "name": "Field to sync 'session_assign_date'",
                     "branchingLogic": {
@@ -74,7 +74,7 @@
                     }                    
                 },  
                 {
-                    "key": "snyc-date-return",
+                    "key": "sync-date-return",
                     "type": "field-list",
                     "name": "Field to sync 'session_return_date'",
                     "branchingLogic": {
@@ -83,14 +83,29 @@
                     }                    
                 },  
                 {
-                    "key": "snyc-date-reset",
+                    "key": "sync-date-reset",
                     "type": "field-list",
                     "name": "Field to sync 'session_reset_date'",
                     "branchingLogic": {
                         "field": "use-sync-data",
                         "value": true
                     }
-                },                                                  
+                },
+                {
+                    "key": "use-test",
+                    "type": "checkbox",
+                    "name": "Use test?"                    
+                },
+                {
+                    "key": "use-test-2",
+                    "type": "checkbox",
+                    "name": "Use test?"                    
+                },
+                {
+                    "key": "use-test-3",
+                    "type": "checkbox",
+                    "name": "Use test?"                    
+                },                                  
                 {
                     "key": "use-additional-assign",
                     "type": "checkbox",

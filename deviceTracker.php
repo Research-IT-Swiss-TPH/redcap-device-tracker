@@ -44,7 +44,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         }
     }
 
-
    /**
     * Hooks Device Tracker module to redcap_every_page_top
     *
@@ -308,7 +307,11 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * @since 1.0.0
      */
     public function handleTracking(Tracking $tracking) {
-        
+
+        //  Initialize variables
+        $tracking_settings = [];       
+        $dataValues_t = [];
+
         try {
             //  Begin database transaction
             $this->beginDbTx();
@@ -373,7 +376,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
 
             //  Get tracking settings
-            $tracking_settings = [];
+
             foreach ($this->getSubSettings('trackings') as $key => $settings) {
                 if($settings["tracking-field"] == $tracking->field) {
                     $tracking_settings =  $settings;
@@ -381,8 +384,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 }
             }
 
-            //  Initialize data array for tracking
-            $dataValues_t = [];
 
             //  Save tracking id into tracking project
             if($tracking->mode == 'assign-device') {
@@ -391,46 +392,44 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
             //  Check if has extra fields
             // to do: validate if extras are enabled !
-            $hasExtra = !empty($tracking->extra);            
+
+            //  Check if action has extras
+            //  To Do: Validate
+            //  Validate extra fields with tracking field instructions
+            //  Validate extra fields with actual fields in form            
+            $hasExtra = !empty($tracking->extra) && $this->checkHasExtra($tracking_settings);
             if($hasExtra) {
-
-                //  To Do: Validate
-                // Validate extra fields with tracking field instructions
-                // Validate extra fields with actual fields in form
-
                 //  Add extra fields to data to be saved
                 foreach ($tracking->extra as $key => $value) {
                     //  push values to fields and add to $dataValues_t
                     $dataValues_t[$key] = $value;
-                }
-                
+                }                
             }
 
             //  Check if sync is enabled
-            $hasSync = false;
-            if($tracking_settings["use-sync-data"] == true) {
-                $hasSync = true;
-            }
+            $hasSync = $this->checkHasSync($tracking_settings);
 
             //  to do: process this through tracking class method (need module instance inside tracking class)
-            //  add warnings when setting is empty
+            //  optional: add warnings when setting is empty
             if($hasSync) {
 
                 $sync_data = [];
 
-                if($tracking->mode == 'assign-device' && !empty($tracking_settings["snyc-date-assign"])) {
-                    $sync_data[$tracking_settings["snyc-date-assign"]] = $tracking->timestamp;
+                if($tracking->mode == 'assign-device' && !empty($tracking_settings["sync-date-assign"])) {
+                    $sync_data[$tracking_settings["sync-date-assign"]] = $tracking->timestamp;
                 }
                 
-                if($tracking->mode == 'return-device' && !empty($tracking_settings["snyc-date-return"]) ) {
-                    $sync_data[$tracking_settings["snyc-date-return"]] = $tracking->timestamp;
+                if($tracking->mode == 'return-device' && !empty($tracking_settings["sync-date-return"]) ) {
+                    $sync_data[$tracking_settings["sync-date-return"]] = $tracking->timestamp;
                 }
 
-                if($tracking->mode == 'reset-device' && !empty($tracking_settings["snyc-date-reset"]) ) {
-                    $sync_data[$tracking_settings["snyc-date-reset"]] = $tracking->timestamp;
+                if($tracking->mode == 'reset-device' && !empty($tracking_settings["sync-date-reset"]) ) {
+                    $sync_data[$tracking_settings["sync-date-reset"]] = $tracking->timestamp;
                 }                
 
-                $sync_data[$tracking_settings["snyc-state"]] = $tracking->getDeviceStateByMode();
+                if( !empty($tracking_settings["sync-state"])) {
+                    $sync_data[$tracking_settings["sync-state"]] = $tracking->getDeviceStateByMode();
+                }
                 
                 //  Add sync fields to data to be saved
                 foreach ($sync_data as $key => $value) {
@@ -440,7 +439,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             }       
 
             //  Perform actual save only if we have data for the specific action to be saved or sync in enabled
-            if($tracking->mode == 'assign-device' || ($tracking->mode != 'assign-device' && $hasExtra) || $hasSync) {
+            //  to do
+            if($tracking->mode == 'assign-device' || $hasSync || $hasExtra) {
                 $data_t = [ $tracking->owner => [$tracking->event => $dataValues_t ] ];
                 
                 $params_t = [
@@ -495,7 +495,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             ]);
 
             //  Send to Frontend
-            $this->sendError(500, $th);
+            $this->sendError(500, $th, $tracking_settings);
         }
 
         $response = array(
@@ -505,7 +505,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             "saved_tracking" => $saved_t ?? [],
             "log_id" => $logId,
             "extra" => $tracking->extra,
-            "sync" => $sync_data,
+            "sync" => $sync_data ?? [],
             "settings" => $tracking_settings
         );
 
@@ -552,6 +552,38 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * 
      * 
      */
+
+    /**
+     * Check if current action has extra enabled
+     * 
+     * 
+     */
+    private function checkHasExtra($settings):bool {
+
+        if( $this->mode == 'assign-device') {
+            return (bool) $settings["use-additional-assign"];
+        }
+
+        if( $this->mode == 'return-device') {
+            return (bool) $settings["use-additional-return"];
+        }    
+
+        if( $this->mode == 'reset-device') {
+            return (bool) $settings["use-additional-reset"];
+        }
+
+        return false;
+
+    }
+
+    /**
+     * Check if current action has sync enabled
+     * 
+     * 
+     */
+    private function checkHasSync($settings):bool {
+        return (bool) $settings["use-sync-data"];
+    }
 
     /**
      * Get Tracking for Field
@@ -604,9 +636,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 "enum"  => $enum
              );                
         }
-    }        
-
-
+    }
 
     /**
      * Use database transactions in case there is an error
@@ -749,7 +779,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     * @since 1.0.0
     *
     */      
-    private function sendError($status = 400, $th = null ) {
+    private function sendError($status = 400, $th = null, $settings = [] ) {
        
         header('Content-Type: application/json; charset=UTF-8');
         switch ($status) {
@@ -775,7 +805,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 'code' => $status,
                 'file' => $th->getFile(),
                 'line' => $th->getLine(),
-                'trace' => $th->getTrace()
+                'trace' => $th->getTrace(),
+                'settings' => $settings
             ]);
         }
         die();
