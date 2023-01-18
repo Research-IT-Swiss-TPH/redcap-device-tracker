@@ -32,10 +32,13 @@
             <div class="swal2-html-container text-center" id="swal2-html-container" style="display: block;">
                 <b-alert show variant="danger">
                     <!-- <p><b>{{ error.message }}</b><br>{{ JSON.parse(error.request.response).error }}</p> -->
+                    <p><b>{{ error.msg }}</b></p>
+                    <p v-if="error.data.line">Exception thrown at line <i>{{ error.data.line }}</i> in file <i>{{ error.data.file }}</i>:</p>
+                    <p class="text-monospace">{{ error.data.message }}</p>
                     <hr>
                     <p class="mb-0">
-                        Please notify a REDCap Administrator about the exact issue.
-                    </p>                    
+                        An administrator has been notified about the issue.
+                    </p>
                 </b-alert>
             </div>            
         </div>
@@ -58,7 +61,7 @@
         },
         computed: {
             hasError: function() {
-                return (this.error.message !== undefined)
+                return (this.error !== undefined)
             } 
         }
 

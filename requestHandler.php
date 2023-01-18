@@ -1,6 +1,7 @@
 <?php
 /** @var \STPH\deviceTracker\deviceTracker $module */
 namespace STPH\deviceTracker;
+use Exception;
 
 //  DEFAULT MODES
 const DEFAULT_MODES = array('assign-device', 'return-device', 'reset-device');
@@ -38,7 +39,7 @@ if ($_REQUEST['action'] == 'validate-device') {
 
 //  Tracking Handler
 if( ($_REQUEST['action'] == 'handle-tracking') ) {
-    
+   
     if(!isset($_GET["device_id"]) || !isset($_GET["field_id"]) || !isset($_GET["owner_id"]) || !isset($_GET["mode"])) {
         header("HTTP/1.1 400 Bad Request");
         header('Content-Type: application/json; charset=UTF-8');    
@@ -51,15 +52,8 @@ if( ($_REQUEST['action'] == 'handle-tracking') ) {
         die("Invalid tracking mode."); 
     }
 
-    try {        
-        $tracking = new Tracking($_GET);
-        $module->handleTracking($tracking);
-
-    } catch(\Throwable $th ) {
-        header("HTTP/1.1 400 Bad Request");
-        header('Content-Type: application/json; charset=UTF-8');
-        die($th->getMessage());
-    }    
+    $tracking = new Tracking($_GET);
+    $module->handleTracking($tracking);
 
 }
 

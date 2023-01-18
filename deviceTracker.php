@@ -51,7 +51,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     * @since 1.0.0
     */
     public function redcap_every_page_top($project_id = null) {
-       
+      
         if($this->isValidTrackingPage()) {
             $this->renderTrackingInterface();
         }
@@ -450,9 +450,11 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 $saved_t = REDCap::saveData($params_t);
 
                 //  Check if there were any errors during save and throw error
-                if(count($saved_t["errors"]) !== 0) {
+                if(is_array($saved_t["errors"]) && count($saved_t["errors"]) !== 0) {
                     throw new Exception(implode(", ", $saved_t["errors"]));
-                }                
+                } elseif(!empty($saved_t["errors"])) {
+                    throw new Exception($saved_t["errors"]);
+                }
             }
 
             //  Write to log
@@ -477,6 +479,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
         } catch (\Throwable $th) {
 
+
             //  Rollback database
             $this->rollbackDbTx();
             
@@ -492,7 +495,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             ]);
 
             //  Send to Frontend
-            $this->sendError(500, $th->getMessage());
+            $this->sendError(500, $th);
         }
 
         $response = array(
@@ -746,9 +749,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     * @since 1.0.0
     *
     */      
-    private function sendError($status = 400, $msg = "") {
+    private function sendError($status = 400, $th = null ) {
+       
         header('Content-Type: application/json; charset=UTF-8');
-
         switch ($status) {
             case 500:
                 header("HTTP/1.1 500 Internal Server Error'");
@@ -766,10 +769,17 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 # code...
                 break;
         }
-        if($msg !="") {
-            echo json_encode(array("error" => $msg));
-        } 
+        if($th != null) {
+            echo json_encode([
+                'message' => $th->getMessage(),
+                'code' => $status,
+                'file' => $th->getFile(),
+                'line' => $th->getLine(),
+                'trace' => $th->getTrace()
+            ]);
+        }
         die();
+
     }
 
 
