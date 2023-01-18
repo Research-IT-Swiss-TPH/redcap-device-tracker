@@ -319,19 +319,19 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Retrieve current device instance info (assuming that current instance is last instance)
             list($currentInstanceId, $currentInstanceState) = $this->getCurrentDeviceInfo($tracking->device);
             //  Do checks (different for every action)
-            if($tracking->mode == 'assign-device') {
+            if($tracking->mode == 'assign') {
                 if( ($currentInstanceId == 0 && $currentInstanceState != NULL) || $currentInstanceId != 0 && $currentInstanceState != 0) {
                     throw new Exception ("Invalid current instance state. Expected 0, found: " . $currentInstanceId);
                 }
             }
 
-            if($tracking->mode == 'return-device') {
+            if($tracking->mode == 'return') {
                 if( $currentInstanceState != 1) {
                     throw new Exception ("Invalid current instance state. Expected 1, found: " . $currentInstanceId);
                 }
             }
 
-            if($tracking->mode == 'reset-device') {
+            if($tracking->mode == 'reset') {
                 if( $currentInstanceState != 2) {
                     throw new Exception ("Invalid current instance state. Expected 2, found: " . $currentInstanceId);
                 }                
@@ -341,7 +341,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $currentTrackingId = $this->getCurrentTrackingId($tracking->project, $tracking->field, $tracking->owner);
 
             //  Do checks (different for every action)
-            if($tracking->mode == 'assign-device') {
+            if($tracking->mode == 'assign') {
                 if(!empty($currentTrackingId)) {
                     throw new Exception("Invalid current tracking field. Expected NULL found: " . $currentTrackingId);
                 }
@@ -386,7 +386,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
 
             //  Save tracking id into tracking project
-            if($tracking->mode == 'assign-device') {
+            if($tracking->mode == 'assign') {
                 $dataValues_t[$tracking->field] = $tracking->id;                
             }            
 
@@ -415,15 +415,15 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
                 $sync_data = [];
 
-                if($tracking->mode == 'assign-device' && !empty($tracking_settings["sync-date-assign"])) {
+                if($tracking->mode == 'assign' && !empty($tracking_settings["sync-date-assign"])) {
                     $sync_data[$tracking_settings["sync-date-assign"]] = $tracking->timestamp;
                 }
                 
-                if($tracking->mode == 'return-device' && !empty($tracking_settings["sync-date-return"]) ) {
+                if($tracking->mode == 'return' && !empty($tracking_settings["sync-date-return"]) ) {
                     $sync_data[$tracking_settings["sync-date-return"]] = $tracking->timestamp;
                 }
 
-                if($tracking->mode == 'reset-device' && !empty($tracking_settings["sync-date-reset"]) ) {
+                if($tracking->mode == 'reset' && !empty($tracking_settings["sync-date-reset"]) ) {
                     $sync_data[$tracking_settings["sync-date-reset"]] = $tracking->timestamp;
                 }                
 
@@ -440,7 +440,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
             //  Perform actual save only if we have data for the specific action to be saved or sync in enabled
             //  to do
-            if($tracking->mode == 'assign-device' || $hasSync || $hasExtra) {
+            if($tracking->mode == 'assign' || $hasSync || $hasExtra) {
                 $data_t = [ $tracking->owner => [$tracking->event => $dataValues_t ] ];
                 
                 $params_t = [
@@ -477,8 +477,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  End database transaction
             $this->endDbTx();
 
-        } catch (\Throwable $th) {
-
+        } catch (Exception $e) {
 
             //  Rollback database
             $this->rollbackDbTx();
@@ -486,7 +485,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Handle Error
             //  Save to logs
             $this->log("tracking-error", [
-                "error" => $th->getMessage(),
+                "error" => $e->getMessage(),
                 "action"=> $tracking->mode,
                 "field"=> $tracking->field,
                 "value"=> $tracking->device,
@@ -495,7 +494,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             ]);
 
             //  Send to Frontend
-            $this->sendError(500, $th, $tracking_settings);
+            $this->sendError(500, $e, $tracking_settings);
         }
 
         $response = array(
@@ -560,15 +559,15 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     private function checkHasExtra($settings):bool {
 
-        if( $this->mode == 'assign-device') {
+        if( $this->mode == 'assign') {
             return (bool) $settings["use-additional-assign"];
         }
 
-        if( $this->mode == 'return-device') {
+        if( $this->mode == 'return') {
             return (bool) $settings["use-additional-return"];
         }    
 
-        if( $this->mode == 'reset-device') {
+        if( $this->mode == 'reset') {
             return (bool) $settings["use-additional-reset"];
         }
 

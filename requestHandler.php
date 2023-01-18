@@ -4,7 +4,7 @@ namespace STPH\deviceTracker;
 use Exception;
 
 //  DEFAULT MODES
-const DEFAULT_MODES = array('assign-device', 'return-device', 'reset-device');
+const DEFAULT_MODES = array('assign', 'return', 'reset');
 
 //  Require tracking class
 if (!class_exists("Tracking")) require_once("classes/tracking.class.php");
@@ -51,9 +51,9 @@ if( ($_REQUEST['action'] == 'handle-tracking') ) {
         header('Content-Type: application/json; charset=UTF-8');    
         die("Invalid tracking mode."); 
     }
-
-    $tracking = new Tracking($_GET);
-    $module->handleTracking($tracking);
+    $module->handleTracking(new Tracking(
+        $module->escape($_GET)
+    ));
 
 }
 

@@ -198,7 +198,7 @@ import SweetAlert from './SweetAlert.vue'
             this.axios({
                 params: {        
                         action: 'handle-tracking',           
-                        mode: this.modalMode + '-device',
+                        mode: this.modalMode,
                         event_id: this.page.event_id,
                         owner_id: this.page.record_id,
                         field_id: this.field,

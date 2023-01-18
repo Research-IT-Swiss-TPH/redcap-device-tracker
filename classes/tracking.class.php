@@ -24,12 +24,12 @@ class Tracking {
             
             $this->project  = PROJECT_ID;
             
-            $this->mode     = htmlspecialchars($request["mode"]);
-            $this->event    = htmlspecialchars($request["event_id"]);
-            $this->owner    = htmlspecialchars($request["owner_id"]);
-            $this->field    = htmlspecialchars($request["field_id"]);
-            $this->device   = htmlspecialchars($request["device_id"]);
-            $this->user     = htmlspecialchars($request["user_id"]);
+            $this->mode     = $request["mode"];
+            $this->event    = $request["event_id"];
+            $this->owner    = $request["owner_id"];
+            $this->field    = $request["field_id"];
+            $this->device   = $request["device_id"];
+            $this->user     = $request["user_id"];
 
             //  Replace this in future with https://github.com/ramsey/uuid
             $this->id       = hash('sha256', $this->owner . "." . $this->device . "." . $this->project);
@@ -37,7 +37,7 @@ class Tracking {
 
             $this->extra = [];
             if(!empty($request["extra"]) && is_array(json_decode($request["extra"], true))) {
-                $this->extra = array_map("htmlspecialchars", json_decode($request["extra"], true));
+                $this->extra = json_decode($request["extra"], true);
             }            
             
 
@@ -52,13 +52,13 @@ class Tracking {
      * 
      */
     public function getDeviceStateByMode() {
-        if($this->mode == "assign-device" ) {
+        if($this->mode == "assign" ) {
             return 1;
         }
-        if($this->mode == "return-device" ) {
+        if($this->mode == "return" ) {
             return 2;
         }
-        if($this->mode == "reset-device" ) {
+        if($this->mode == "reset" ) {
             return 0;
         }        
     }
@@ -69,7 +69,7 @@ class Tracking {
      * 
      */
     public function getDataDevices($instance, $event) {
-        if($this->mode == "assign-device") {
+        if($this->mode == "assign") {
             $values = [
                 "session_tracking_id" => $this->id,
                 "session_owner_id" => $this->owner,
@@ -80,14 +80,14 @@ class Tracking {
             $instance++;
         }
 
-        if($this->mode == "return-device") {
+        if($this->mode == "return") {
             $values = [
                 "session_device_state" => 2,
                 "session_return_date" => $this->timestamp
             ];
         }
 
-        if($this->mode == "reset-device") {
+        if($this->mode == "reset") {
             $values = [
                 "session_device_state" => 0,
                 "session_reset_date" => $this->timestamp
