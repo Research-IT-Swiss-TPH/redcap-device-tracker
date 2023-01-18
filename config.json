@@ -90,22 +90,7 @@
                         "field": "use-sync-data",
                         "value": true
                     }
-                },
-                {
-                    "key": "use-test",
-                    "type": "checkbox",
-                    "name": "Use test?"                    
-                },
-                {
-                    "key": "use-test-2",
-                    "type": "checkbox",
-                    "name": "Use test?"                    
-                },
-                {
-                    "key": "use-test-3",
-                    "type": "checkbox",
-                    "name": "Use test?"                    
-                },                                  
+                },                                
                 {
                     "key": "use-additional-assign",
                     "type": "checkbox",

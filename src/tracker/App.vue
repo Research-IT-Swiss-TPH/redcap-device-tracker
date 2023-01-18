@@ -14,8 +14,8 @@
             <b-button v-b-modal.tracking-modal :disabled="action!='return'" class="btn-primaryrc"><i class="fas fa-history"></i> Return</b-button>
             <b-button v-b-modal.tracking-modal :disabled="action!='reset'" class="btn-primaryrc"><i class="fas fa-power-off"></i> Reset</b-button>
           </b-button-group>
-          <b-alert v-else show variant="info" class="actions-final-alert">
-            There are no more actions to be performed.
+          <b-alert v-else show variant="success" class="actions-final-alert">
+            Completed.
           </b-alert>
         </div>
         <trackingModal :action="action" :field="field" :tracking="tracking" :page="page" />
