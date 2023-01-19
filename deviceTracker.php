@@ -377,10 +377,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $saved_d = REDCap::saveData($params_d);
 
             //  Throw error if there were errors during save
-            if(count($saved_d["errors"]) !== 0) {
+            if(is_array($saved_d["errors"]) && count($saved_d["errors"]) !== 0) {
                 throw new Exception(implode(", ", $saved_d["errors"]));
+            } elseif(!empty($saved_d["errors"])) {
+                throw new Exception($saved_d["errors"]);
             }
-            
+
             /**
              * 2. Save data to tracking project
              * 
