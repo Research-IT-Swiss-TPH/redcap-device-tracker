@@ -15,22 +15,25 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
     static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
+        self::createTestProjects();
         
-        //  Create test PIDs
-        self::$testPIDs = ExternalModules::getTestPIDs();
-        self::echo("Test Projects have been created.(PIDs: ". implode(", ", self::$testPIDs) . ")");
-        
-        //  Set Project Context and global project object
-        define('PROJECT_ID', self::$testPIDs[0]);
-        global $Proj;
-        $Proj = new Project(PROJECT_ID);
-
-        //  Give info to see better whats up
-        self::echo("Available forms: " . implode(", ", array_keys($Proj->forms)));
+        // //  Give info to see better whats up
+        // self::echo("Available forms: " . implode(", ", array_keys($Proj->forms)));
     }
 
     static function tearDownAfterClass():void{
         self::cleanupTestProjects();
+        self::preserveProjectsTable();
+    }
+
+    /**
+     * Create Test Projects 
+     * 
+     */
+    static function createTestProjects() {
+         // Get test PIDs
+        self::$testPIDs = ExternalModules::getTestPIDs();
+        self::echo("Test Projects have been created. (PIDs: ". implode(", ", self::$testPIDs) . ")");
     }
 
     /**
@@ -48,6 +51,25 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
         );
 
         self::echo("Test Projects have been deleted.");
+    }
+
+    /**
+     * Preserve REDCap projects table
+     * 
+     * Sets redcap_project AUTO_INCREMENT to MAX(project_id)
+     * https://stackoverflow.com/a/41466825/3127170
+     * 
+     */
+    static function preserveProjectsTable() {
+
+        ExternalModules::query("SET @m = (SELECT MAX(project_id) + 1 FROM redcap_projects)", []);
+        ExternalModules::query("SET @s = CONCAT('ALTER TABLE redcap_projects AUTO_INCREMENT=', @m)", []);
+        ExternalModules::query("PREPARE stmt1 FROM @s", []);
+        ExternalModules::query("EXECUTE stmt1", []);
+        ExternalModules::query("DEALLOCATE PREPARE stmt1", []);
+
+        self::echo("Projects table has been preserved.");
+
     }
 
     /**

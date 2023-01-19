@@ -1,22 +1,25 @@
-<?php
-
-namespace STPH\deviceTracker;
+<?php namespace STPH\deviceTracker;
 
 use Exception;
 use REDCap;
+use ExternalModules\ExternalModules;
 
-//  used for development
+//  Require composer dependencies during development only
 if( file_exists("vendor/autoload.php") ){
     require 'vendor/autoload.php';
 }
 
-//  require tracking class
+//  Require custom classes
 if (!class_exists("Tracking")) require_once("classes/tracking.class.php");
 
-// Declare your module class, which must extend AbstractExternalModule 
+
 class deviceTracker extends \ExternalModules\AbstractExternalModule {    
 
-    private $devices_project_id;
+    //======================================================================
+    // Variables
+    //======================================================================
+
+    public  $devices_project_id;
     private $devices_event_id;
 
     private $tracking_record;
@@ -24,73 +27,90 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     private $tracking_fields;
     private $tracking_event;
 
+    private bool $isTesting = false;
+
+
+    //======================================================================
+    // Methods
+    //======================================================================    
+    
+    # Base
+    # Request Handler Calls (public)
+    # Controllers
+
+
+    //-----------------------------------------------------
+    // Base
+    //-----------------------------------------------------
+
     /**
-    * Constructs the class
-    *
-    */
+     * Construct the class
+     * 
+     * @since 1.0.0
+     */
     public function __construct()
     {
         parent::__construct();
 
+        //  Check if we are in testing context
+        $this->isTesting = ExternalModules::isTesting();
+
         //  Setup Project Context if pid is available through request and constant is not yet defined
         if(isset($_GET["pid"]) && !defined('PROJECT_ID')) {
             define('PROJECT_ID', $this->escape($_GET["pid"]));
+            // global $Proj;
+            // $Proj = new Project(PROJECT_ID);
         }
 
-        //  Check if in project context, otherwise this will break during module enable/disable
-        if(defined('PROJECT_ID')) {
-            $this->devices_project_id = $this->getSystemSetting("devices-project");
-            $this->devices_event_id = (new \Project( $this->devices_project_id ))->firstEventId;            
-        }
+        //  Set Device Project variables
+        $this->setDeviceProject();
+
     }
 
-   /**
-    * Hooks Device Tracker module to redcap_every_page_top
-    *
-    * @since 1.0.0
-    */
+    /**
+     * Set Device Project variables
+     * 
+     * Covers test context
+     * @since 1.0.0
+     */
+    private function setDeviceProject() {
+        $this->devices_project_id = $this->isTesting ? self::getTestSystemSetting("devices-project") : $this->getSystemSetting("devices-project");
+        $this->devices_event_id = (new \Project( $this->devices_project_id ))->firstEventId;
+    }
+
+    /**
+     * Mock test system setting that 
+     * are not accessible through getSystemSetting
+     * 
+     * @since 1.0.0
+     */
+    private static function getTestSystemSetting($key) {
+        if($key == "devices-project") {
+            //  Return first Test Project
+            return ExternalModules::getTestPIDs()[0];
+        }
+    }    
+    
+    /**
+     * Hooks Device Tracker module to redcap_every_page_top
+     *
+     * @since 1.0.0
+     */
     public function redcap_every_page_top($project_id = null) {
 
-        //$device_id = "A10003";
 
-
-        //dump($this->getSessionData($device_id));
-
-        // $data = REDCap::getData(array(
-        //     'return_format' => 'array', 
-        //     'project_id' => $this->devices_project_id,
-        //     'records' => $device_id,            
-        //     'fields' => ["session_device_state", "record_id", "repeat_instances"],
-        //     'exportDataAccessGroups' => true
-        // ));
-
-        // dump($data);
-        // //  get last instance id
-        // $sessions = $data[$device_id]["repeat_instances"][$this->devices_event_id]["sessions"];
-        // dump($sessions);
-
-        // $instance_ids = array_keys($sessions);
-        // dump($instance_ids);
-
-        // $lastInstanceId = max($instance_ids);
-        // dump($lastInstanceId);
-
-
-
-      
         if($this->isValidTrackingPage()) {
             $this->renderTrackingInterface();
         }
-
     }
 
     /**
      * Check if is a valid page for tracking and sets parameters as variables
      * 
+     * 
      * @since 1.0.0
      */
     private function isValidTrackingPage() {
-
         //  Check if valid Data Entry page
         if($this->isPage('DataEntry/index.php') && isset( $_GET['id']) && defined('USERID')) {
 
@@ -106,13 +126,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 $this->tracking_fields = $all_tracking_fields[$this->tracking_page];
 
                 return true;
-
             }
         }
-
         return false;
     
     }
+
 
     /**
      * Render HTML and Javascript to insert Vue Instance
@@ -196,12 +215,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }
 
 
-
-    /**
-     * PUBLIC METHODS used via AJAX/AXIOS
-     * 
-     * 
-     */
+    //-----------------------------------------------------
+    // Request Handler Calls (public)
+    //-----------------------------------------------------
 
 
     /**
@@ -241,51 +257,11 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         $response = reset(json_decode($json));
 
         $this->sendResponse($response); 
-    }     
-
+    }       
 
     /**
-     * Get available devices
-     * Get a list of all available devices by filtering through session_device_state
+     * Validate device by device_id and tracking_field
      * 
-     * @since 1.0.0
-     */
-    public function getAvailableDevices(array $types=[]) :array {
-
-        //  General filter logic
-        $filterLogic = '([session_device_state][last-instance] = 0 or isblankormissingcode([session_device_state][last-instance]))';
-
-        //  Add filter by type(s) if given
-        $filterForTypes = "";
-        if(!empty($types)) {
-            if(count($types) == 1) {
-                $filterForTypes = "[device_type] = " . $types[0];
-            } else {             
-                $filterForTypes = "(";
-                foreach ($types as $key => $type) {
-                    if($key == 0) {
-                        $filterForTypes .= "[device_type] = " . $type ;
-                    } else {
-                        $filterForTypes .= " or [device_type] = " . $type;
-                    }
-                }
-                $filterForTypes .= ")";
-            }
-            $filterLogic .= " and " . $filterForTypes;
-        }
-
-        $params = array(
-            'project_id' => $this->getSystemSetting("devices-project"),
-            'filterLogic'=> $filterLogic, 
-            'fields'=>array('record_id', 'device_type', 'session_device_state')
-        );
-
-        return REDCap::getData($params);
-    }     
-
-    /**
-     * Request Handler Methods
-     * Can be accessed via AJAX/AXIOS
      * 
      * @since 1.0.0
      */
@@ -426,14 +402,11 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 $dataValues_t[$tracking->field] = $tracking->id;                
             }            
 
-            //  Check if has extra fields
-            // to do: validate if extras are enabled !
-
-            //  Check if action has extras
             //  To Do: Validate
             //  Validate extra fields with tracking field instructions
-            //  Validate extra fields with actual fields in form            
-            $hasExtra = !empty($tracking->extra) && $this->checkHasExtra($tracking_settings);
+            //  Validate extra fields with actual fields in form
+            //  Check if action has extras
+            $hasExtra = !empty($tracking->extra) && $this->checkHasExtra($tracking_settings, $tracking->mode);
             if($hasExtra) {
                 //  Add extra fields to data to be saved
                 foreach ($tracking->extra as $key => $value) {
@@ -539,7 +512,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             "saved_devices" => $saved_d,
             "saved_tracking" => $saved_t ?? [],
             "log_id" => $logId,
-            "extra" => $tracking->extra,
+            "extra" => array("hasExtra" => $hasExtra, "data" => $tracking->extra, "use"=>(bool) $tracking_settings["use-additional-assign"]),
             "sync" => $sync_data ?? [],
             "settings" => $tracking_settings
         );
@@ -581,29 +554,66 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }
 
 
+    //-----------------------------------------------------
+    // Controllers
+    //-----------------------------------------------------
+
 
     /**
-     * HELPERS for public functions
+     * Get a list of all available devices by [device_type]
+     * where [session_device_state] is blank or 0
      * 
-     * 
+     * @since 1.0.0
      */
+    private function getAvailableDevices(array $types=[]) :array {
+
+        //  General filter logic
+        $filterLogic = '([session_device_state][last-instance] = 0 or isblankormissingcode([session_device_state][last-instance]))';
+
+        //  Add filter by type(s) if given
+        $filterForTypes = "";
+        if(!empty($types)) {
+            if(count($types) == 1) {
+                $filterForTypes = "[device_type] = " . $types[0];
+            } else {             
+                $filterForTypes = "(";
+                foreach ($types as $key => $type) {
+                    if($key == 0) {
+                        $filterForTypes .= "[device_type] = " . $type ;
+                    } else {
+                        $filterForTypes .= " or [device_type] = " . $type;
+                    }
+                }
+                $filterForTypes .= ")";
+            }
+            $filterLogic .= " and " . $filterForTypes;
+        }
+
+        $params = array(
+            'project_id' => $this->getSystemSetting("devices-project"),
+            'filterLogic'=> $filterLogic, 
+            'fields'=>array('record_id', 'device_type', 'session_device_state')
+        );
+
+        return REDCap::getData($params);
+    }   
 
     /**
-     * Check if current action has extra enabled
-     * 
+     * Check if current action has extra fields
+     * enabled by mode/action
      * 
      */
-    private function checkHasExtra($settings):bool {
+    private function checkHasExtra($settings, $mode):bool {
 
-        if( $this->mode == 'assign') {
+        if($mode == 'assign') {
             return (bool) $settings["use-additional-assign"];
         }
 
-        if( $this->mode == 'return') {
+        if($mode == 'return') {
             return (bool) $settings["use-additional-return"];
-        }    
+        }
 
-        if( $this->mode == 'reset') {
+        if($mode == 'reset') {
             return (bool) $settings["use-additional-reset"];
         }
 
@@ -612,8 +622,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }
 
     /**
-     * Check if current action has sync enabled
-     * 
+     * Check if current action has device data sync 
+     * enabled by mode/action
      * 
      */
     private function checkHasSync($settings):bool {
@@ -723,27 +733,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return array($lastSessionId, $lastSessionState, $isLastSessionUntracked);
     }
 
-    /**
-     * Get current device info
-     * Returns current device instance number and state
-     * 
-     * @since 1.0.0
-     */
-    private function getCurrentDeviceInfo($device_id) {
-        $data = REDCap::getData(array(
-            'return_format' => 'array', 
-            'project_id' => $this->devices_project_id,
-            'records' => $device_id,
-            'fields' => ["session_device_state"],
-            'exportDataAccessGroups' => true
-        ));
-
-        //  Get last instance and assume it is current instance
-        $currentInstanceId = count((array)$data[$device_id]['repeat_instances'][$this->devices_event_id]["sessions"]);
-        $currentInstanceState  = $data[$device_id]["repeat_instances"][$this->devices_event_id]["sessions"][$currentInstanceId]["session_device_state"];
-
-        return array($currentInstanceId, $currentInstanceState);
-    }
 
     /**
      * Get current tracking id from database
