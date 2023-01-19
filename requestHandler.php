@@ -51,9 +51,9 @@ if( ($_REQUEST['action'] == 'handle-tracking') ) {
         header('Content-Type: application/json; charset=UTF-8');    
         die("Invalid tracking mode."); 
     }
-    $module->handleTracking(new Tracking(
-        $module->escape($_GET)
-    ));
+    //  Will be escaped within class Tracking
+    //  since otherwise it breaks json_encode($_GET["extra"])
+    $module->handleTracking(new Tracking($_GET));
 
 }
 

@@ -1,8 +1,6 @@
-<?php
-namespace STPH\deviceTracker;
+<?php namespace STPH\deviceTracker;
 
 use Exception;
-use ExternalModules\ExternalModules;
 
 class Tracking {
 
@@ -24,20 +22,22 @@ class Tracking {
             
             $this->project  = PROJECT_ID;
             
-            $this->mode     = $request["mode"];
-            $this->event    = $request["event_id"];
-            $this->owner    = $request["owner_id"];
-            $this->field    = $request["field_id"];
-            $this->device   = $request["device_id"];
-            $this->user     = $request["user_id"];
+            $this->mode     = htmlspecialchars($request["mode"]);
+            $this->event    = htmlspecialchars($request["event_id"]);
+            $this->owner    = htmlspecialchars($request["owner_id"]);
+            $this->field    = htmlspecialchars($request["field_id"]);
+            $this->device   = htmlspecialchars($request["device_id"]);
+            $this->user     = htmlspecialchars($request["user_id"]);
 
             //  Replace this in future with https://github.com/ramsey/uuid
             $this->id       = hash('sha256', $this->owner . "." . $this->device . "." . $this->project);
             $this->timestamp = date("Y-m-d H:i:s");
 
+            //  escape converts json string into special HTML entitites,
+            //  we need to revert in order to json decode
             $this->extra = [];
             if(!empty($request["extra"]) && is_array(json_decode($request["extra"], true))) {
-                $this->extra = json_decode($request["extra"], true);
+                $this->extra = array_map("htmlspecialchars", json_decode($request["extra"], true));
             }            
             
 
