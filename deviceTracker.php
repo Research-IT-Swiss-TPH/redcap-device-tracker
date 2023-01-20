@@ -16,6 +16,20 @@ if (!class_exists("Tracking")) require_once("classes/tracking.class.php");
 class deviceTracker extends \ExternalModules\AbstractExternalModule {    
 
     //======================================================================
+    // Architecture
+    //======================================================================
+    
+    /**
+     * module support for different project setups
+     * 
+     * from     single       instrument     single-event    single arm      ~   supported   @1.0.0
+     * from     single       instrument     multiple-event  single arm      ~   supported   @1.4.0
+     * from     repeating    instrument     multiple-event  single arm      ~   invalidated @1.4.0
+     * *        *           *               *               multiple arms   ~   unsupported (tbd: invalidated)
+     * 
+     */
+
+    //======================================================================
     // Variables
     //======================================================================
 
@@ -100,7 +114,14 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
 
         if($this->isValidTrackingPage()) {
-            $this->renderTrackingInterface();
+            if(!$this->isValidDevicesProject()) {
+                $this->renderAlertInvalidDevices();
+            }
+            if(!$this->isValidTrackingProject()) {
+                $this->renderAlertInvalidTracking();
+            } else {
+                $this->renderTrackingInterface();
+            }
         }
     }
 
@@ -108,7 +129,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * Check if is a valid page for tracking and sets parameters as variables
      * 
      * 
-     * @since 1.0.0
+     * @since 1.4.0
      */
     private function isValidTrackingPage() {
         //  Check if valid Data Entry page
@@ -127,11 +148,46 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
                 return true;
             }
+
         }
         return false;
     
     }
 
+    /**
+     * Validate Devices project
+     * 
+     * 
+     * @since 1.4.0
+     */
+    private function isValidDevicesProject() {
+        $pid = $this->isTesting ? self::getTestSystemSetting("devices-project") : $this->getSystemSetting("devices-project");
+        $project = new \Project($pid);
+
+        return !$project->longitudinal && !$project->multiple_arms;
+
+    }
+
+    /**
+     * Validate Tracking project
+     * 
+     * 
+     * @since 1.4.0
+     */
+    private function isValidTrackingProject() {
+
+        $project = new \Project(PROJECT_ID);
+
+        $longitudinal   = $project->longitudinal;
+        $multiple_arms  = $project->multiple_arms;
+
+        $RULE_SINGLE_EVENT_SINGLE_ARM = $longitudinal == false && $multiple_arms == false;
+        $RULE_MULTIP_EVENT_SINGLE_ARM = $longitudinal == true && $multiple_arms == false;
+
+        //  Is valid if any of those rules is true
+        return $RULE_SINGLE_EVENT_SINGLE_ARM || $RULE_MULTIP_EVENT_SINGLE_ARM;
+        
+    }        
 
     /**
      * Render HTML and Javascript to insert Vue Instance
@@ -183,6 +239,36 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         <?php
     }
 
+    private function renderAlertInvalid($msg) {
+        ?>
+        <script>
+            $(function() {
+                $(document).ready(function() {
+                    console.log("Invalid tracking project.")
+                    var msg = '<?= $msg ?>'
+                    var alert_html = '<div class="alert alert-danger alert-dismissible fade show" role="alert">'+msg+'<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span> </button></div>';
+                    $('form#form div').first().prepend(alert_html);
+                });
+            });
+        </script>
+        <?php    
+    }
+
+    private function renderAlertInvalidDevices() {
+        $msg = "Invalid <b>Devices Project</b><br>The current devices project is not a valid Devices Project. Please check the documentation to correctly setup your devices project with Device Tracker module.";
+        $this->renderAlertInvalid($msg);
+    }    
+
+    /**
+     * Render invalid Tracking Page
+     * 
+     * @since 1.4.0
+     */
+    private function renderAlertInvalidTracking() {
+        $msg = "Invalid <b>Tracking Project</b><br>The current tracking project is not a valid Tracking Project. Please check the documentation to correctly setup your tracking project with Device Tracker module.";
+        $this->renderAlertInvalid($msg);  
+    }
+
 
     /**
      * Get data from backend to pass into vue instance(s)
@@ -226,20 +312,24 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * 
      * @since 1.0.0
      */
-    public function getTrackingData($record_id, $field_id){
+    public function getTrackingData($record_id, $field_id, $event_id){
+
+        $response = [];
 
         $params = [
             'project_id'    => PROJECT_ID, 
             'records' => $record_id,
             'fields' => $field_id,
+            'events' => $event_id,
             'return_format' => 'json'
         ];
 
         $data_t = json_decode( REDCap::getData($params), true);
 
-        if(count($data_t) === 0) {
-            $this->sendResponse([]);
-        } 
+        //  Ensure this check is secure for multiple and single events! (Also cover the case when event has data inside other instrument)
+        if(empty($data_t[0][$field_id])) {
+            $this->sendResponse($response);
+        }
 
         $session_tracking_id =  reset($data_t)[$field_id];
        
@@ -488,7 +578,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  End database transaction
             $this->endDbTx();
 
-        } catch (Exception $e) {
+        } catch (\Throwable $th) {
 
             //  Rollback database
             $this->rollbackDbTx();
@@ -496,7 +586,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Handle Error
             //  Save to logs
             $this->log("tracking-error", [
-                "error" => $e->getMessage(),
+                "error" => $th->getMessage(),
                 "action"=> $tracking->mode,
                 "field"=> $tracking->field,
                 "value"=> $tracking->device,
@@ -505,7 +595,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             ]);
 
             //  Send to Frontend
-            $this->sendError(500, $e, $tracking_settings);
+            $this->sendError(500, $th, $tracking_settings);
         }
 
         $response = array(

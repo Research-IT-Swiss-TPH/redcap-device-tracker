@@ -11,7 +11,7 @@ if (!class_exists("Tracking")) require_once("classes/tracking.class.php");
 
 //  Get tracking data on instance mount
 if($_REQUEST['action'] == 'get-tracking-data') {
-    if( !isset($_GET["record_id"]) || !isset($_GET["field_id"]) ) {
+    if( !isset($_GET["record_id"]) || !isset($_GET["field_id"]) || !isset($_GET["event_id"])) {
         header("HTTP/1.1 400 Bad Request");
         header('Content-Type: application/json; charset=UTF-8');    
         die("Invalid parameters."); 
@@ -19,7 +19,8 @@ if($_REQUEST['action'] == 'get-tracking-data') {
 
     $module->getTrackingData(
         $module->escape($_GET["record_id"]), 
-        $module->escape($_GET["field_id"])
+        $module->escape($_GET["field_id"]),
+        $module->escape($_GET["event_id"])
     );
 
 }

@@ -68,16 +68,16 @@ class Tracking {
      * 
      * 
      */
-    public function getDataDevices($instance, $event) {
+    public function getDataDevices($devices_instance, $devices_event) {
         if($this->mode == "assign") {
             $values = [
                 "session_tracking_id" => $this->id,
                 "session_owner_id" => $this->owner,
+                "session_event_id" => $this->event,
                 "session_project_id" => $this->project,
                 "session_device_state" => 1,
                 "session_assign_date" => $this->timestamp
             ];
-            //$instance++;
         }
 
         if($this->mode == "return") {
@@ -98,9 +98,9 @@ class Tracking {
         $data = [
             $this->device => [
                 "repeat_instances" => [
-                    $event => [
+                    $devices_event => [
                         "sessions" => [
-                            $instance => $values
+                            $devices_instance => $values
                         ]
                     ]
                 ]

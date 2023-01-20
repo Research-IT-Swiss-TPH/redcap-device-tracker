@@ -103,7 +103,8 @@
                     params: {
                         action: 'get-tracking-data',
                         record_id: this.page.record_id,
-                        field_id: this.field
+                        field_id: this.field,
+                        event_id: this.page.event_id
                     }
                 })
                 .then( response => {
