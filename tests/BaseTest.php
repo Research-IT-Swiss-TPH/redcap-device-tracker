@@ -22,8 +22,9 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
     }
 
     static function tearDownAfterClass():void{
-        self::cleanupTestProjects();
-        self::preserveProjectsTable();
+        // self::cleanupTestProjects();
+        // self::cleanupRecordData();
+        // self::preserveProjectsTable();
     }
 
     /**
@@ -51,6 +52,13 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
         );
 
         self::echo("Test Projects have been deleted.");
+    }
+
+    static function cleanupRecordData() {
+
+        $sql = 'DELETE FROM redcap_data WHERE `project_id` = ?';
+        ExternalModules::query($sql, [self::$testPIDs[0]]);
+
     }
 
     /**
@@ -93,7 +101,7 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
         $format = " \33[34m".$unicode."\33[0m \33[44m";
 
         if($mode == "fixture") {
-            $format = " \33[35m".$unicode."\33[0m \33[45m";
+            $format = " \33[35m".$unicode."\33[0m \33[45m Fixture success: ";
         }
 
         // echo message to output with color and unicode

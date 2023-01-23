@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ODM xmlns="http://www.cdisc.org/ns/odm/v1.3" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:redcap="https://projectredcap.org" xsi:schemaLocation="http://www.cdisc.org/ns/odm/v1.3 schema/odm/ODM1-3-1.xsd" ODMVersion="1.3.1" FileOID="000-00-0000" FileType="Snapshot" Description="#template- DEVICE TRACKER DATA" AsOfDateTime="2023-01-20T07:30:41" CreationDateTime="2023-01-20T07:30:41" SourceSystem="REDCap" SourceSystemVersion="13.1.7">
+<Study OID="Project.TestDEVICEDATA">
+<GlobalVariables>
+	<StudyName>#template- DEVICE TRACKER DATA</StudyName>
+	<StudyDescription>This file contains the metadata, events, and data for REDCap project "#template- DEVICE TRACKER DATA".</StudyDescription>
+	<ProtocolName>#template- DEVICE TRACKER DATA</ProtocolName>
+	<redcap:RecordAutonumberingEnabled>1</redcap:RecordAutonumberingEnabled>
+	<redcap:CustomRecordLabel></redcap:CustomRecordLabel>
+	<redcap:SecondaryUniqueField></redcap:SecondaryUniqueField>
+	<redcap:SchedulingEnabled>0</redcap:SchedulingEnabled>
+	<redcap:SurveysEnabled>0</redcap:SurveysEnabled>
+	<redcap:SurveyInvitationEmailField></redcap:SurveyInvitationEmailField>
+	<redcap:MyCapEnabled>0</redcap:MyCapEnabled>
+	<redcap:Purpose>3</redcap:Purpose>
+	<redcap:PurposeOther></redcap:PurposeOther>
+	<redcap:ProjectNotes>Used for storing cross-project device tracking data in combination with &quot;Device Tracker&quot; external module.</redcap:ProjectNotes>
+	<redcap:MissingDataCodes></redcap:MissingDataCodes>
+	<redcap:ProtectedEmailMode>0</redcap:ProtectedEmailMode>
+	<redcap:ProtectedEmailModeCustomText></redcap:ProtectedEmailModeCustomText>
+	<redcap:ProtectedEmailModeTrigger>ALL</redcap:ProtectedEmailModeTrigger>
+	<redcap:ProtectedEmailModeLogo></redcap:ProtectedEmailModeLogo>
+	<redcap:RepeatingInstrumentsAndEvents>
+		<redcap:RepeatingInstruments>
+			<redcap:RepeatingInstrument redcap:UniqueEventName="event_1_arm_1" redcap:RepeatInstrument="sessions" redcap:CustomLabel=""/>
+		</redcap:RepeatingInstruments>
+	</redcap:RepeatingInstrumentsAndEvents>
+</GlobalVariables>
+<MetaDataVersion OID="Metadata.TestDEVICEDATA_2023-01-20_0730" Name="#template- DEVICE TRACKER DATA" redcap:RecordIdField="record_id">
+	<FormDef OID="Form.device" Name="Device" Repeating="No" redcap:FormName="device">
+		<ItemGroupRef ItemGroupOID="device.record_id" Mandatory="No"/>
+		<ItemGroupRef ItemGroupOID="device.device_complete" Mandatory="No"/>
+	</FormDef>
+	<FormDef OID="Form.sessions" Name="Sessions" Repeating="No" redcap:FormName="sessions">
+		<ItemGroupRef ItemGroupOID="sessions.session_tracking_id" Mandatory="No"/>
+		<ItemGroupRef ItemGroupOID="sessions.sessions_complete" Mandatory="No"/>
+	</FormDef>
+	<ItemGroupDef OID="device.record_id" Name="Device" Repeating="No">
+		<ItemRef ItemOID="record_id" Mandatory="No" redcap:Variable="record_id"/>
+		<ItemRef ItemOID="device_type" Mandatory="No" redcap:Variable="device_type"/>
+		<ItemRef ItemOID="device_registration_date" Mandatory="No" redcap:Variable="device_registration_date"/>
+		<ItemRef ItemOID="device_suspension_date" Mandatory="No" redcap:Variable="device_suspension_date"/>
+	</ItemGroupDef>
+	<ItemGroupDef OID="device.device_complete" Name="Form Status" Repeating="No">
+		<ItemRef ItemOID="device_complete" Mandatory="No" redcap:Variable="device_complete"/>
+	</ItemGroupDef>
+	<ItemGroupDef OID="sessions.session_tracking_id" Name="Sessions" Repeating="No">
+		<ItemRef ItemOID="session_tracking_id" Mandatory="No" redcap:Variable="session_tracking_id"/>
+		<ItemRef ItemOID="session_owner_id" Mandatory="No" redcap:Variable="session_owner_id"/>
+		<ItemRef ItemOID="session_project_id" Mandatory="No" redcap:Variable="session_project_id"/>
+		<ItemRef ItemOID="session_device_state" Mandatory="No" redcap:Variable="session_device_state"/>
+		<ItemRef ItemOID="session_assign_date" Mandatory="No" redcap:Variable="session_assign_date"/>
+		<ItemRef ItemOID="session_return_date" Mandatory="No" redcap:Variable="session_return_date"/>
+		<ItemRef ItemOID="session_reset_date" Mandatory="No" redcap:Variable="session_reset_date"/>
+	</ItemGroupDef>
+	<ItemGroupDef OID="sessions.sessions_complete" Name="Form Status" Repeating="No">
+		<ItemRef ItemOID="sessions_complete" Mandatory="No" redcap:Variable="sessions_complete"/>
+	</ItemGroupDef>
+	<ItemDef OID="record_id" Name="record_id" DataType="text" Length="999" redcap:Variable="record_id" redcap:FieldType="text">
+		<Question><TranslatedText>Record ID</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="device_type" Name="device_type" DataType="text" Length="1" redcap:Variable="device_type" redcap:FieldType="select">
+		<Question><TranslatedText>Device Type</TranslatedText></Question>
+		<CodeListRef CodeListOID="device_type.choices"/>
+	</ItemDef>
+	<ItemDef OID="device_registration_date" Name="device_registration_date" DataType="date" Length="999" redcap:Variable="device_registration_date" redcap:FieldType="text" redcap:TextValidationType="date_dmy">
+		<Question><TranslatedText>Device Registration Date</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="device_suspension_date" Name="device_suspension_date" DataType="date" Length="999" redcap:Variable="device_suspension_date" redcap:FieldType="text" redcap:TextValidationType="date_dmy">
+		<Question><TranslatedText>Device Suspension Date</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="device_complete" Name="device_complete" DataType="text" Length="1" redcap:Variable="device_complete" redcap:FieldType="select" redcap:SectionHeader="Form Status">
+		<Question><TranslatedText>Complete?</TranslatedText></Question>
+		<CodeListRef CodeListOID="device_complete.choices"/>
+	</ItemDef>
+	<ItemDef OID="session_tracking_id" Name="session_tracking_id" DataType="text" Length="999" redcap:Variable="session_tracking_id" redcap:FieldType="text">
+		<Question><TranslatedText>Session Tracking ID</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="session_owner_id" Name="session_owner_id" DataType="text" Length="999" redcap:Variable="session_owner_id" redcap:FieldType="text">
+		<Question><TranslatedText>Session Owner ID</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="session_project_id" Name="session_project_id" DataType="text" Length="999" redcap:Variable="session_project_id" redcap:FieldType="text">
+		<Question><TranslatedText>Session Project ID</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="session_device_state" Name="session_device_state" DataType="text" Length="1" redcap:Variable="session_device_state" redcap:FieldType="radio">
+		<Question><TranslatedText>Session Device State</TranslatedText></Question>
+		<CodeListRef CodeListOID="session_device_state.choices"/>
+	</ItemDef>
+	<ItemDef OID="session_assign_date" Name="session_assign_date" DataType="datetime" Length="999" redcap:Variable="session_assign_date" redcap:FieldType="text" redcap:TextValidationType="datetime_seconds_dmy">
+		<Question><TranslatedText>Session Assign Date</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="session_return_date" Name="session_return_date" DataType="datetime" Length="999" redcap:Variable="session_return_date" redcap:FieldType="text" redcap:TextValidationType="datetime_seconds_dmy">
+		<Question><TranslatedText>Session Return Date</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="session_reset_date" Name="session_reset_date" DataType="datetime" Length="999" redcap:Variable="session_reset_date" redcap:FieldType="text" redcap:TextValidationType="datetime_seconds_dmy">
+		<Question><TranslatedText>Session Reset Date</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="sessions_complete" Name="sessions_complete" DataType="text" Length="1" redcap:Variable="sessions_complete" redcap:FieldType="select" redcap:SectionHeader="Form Status">
+		<Question><TranslatedText>Complete?</TranslatedText></Question>
+		<CodeListRef CodeListOID="sessions_complete.choices"/>
+	</ItemDef>
+	<CodeList OID="device_type.choices" Name="device_type" DataType="text" redcap:Variable="device_type">
+		<CodeListItem CodedValue="0"><Decode><TranslatedText>A</TranslatedText></Decode></CodeListItem>
+		<CodeListItem CodedValue="1"><Decode><TranslatedText>B</TranslatedText></Decode></CodeListItem>
+		<CodeListItem CodedValue="2"><Decode><TranslatedText>C</TranslatedText></Decode></CodeListItem>
+		<CodeListItem CodedValue="3"><Decode><TranslatedText>D</TranslatedText></Decode></CodeListItem>
+	</CodeList>
+	<CodeList OID="device_complete.choices" Name="device_complete" DataType="text" redcap:Variable="device_complete">
+		<CodeListItem CodedValue="0"><Decode><TranslatedText>Incomplete</TranslatedText></Decode></CodeListItem>
+		<CodeListItem CodedValue="1"><Decode><TranslatedText>Unverified</TranslatedText></Decode></CodeListItem>
+		<CodeListItem CodedValue="2"><Decode><TranslatedText>Complete</TranslatedText></Decode></CodeListItem>
+	</CodeList>
+	<CodeList OID="session_device_state.choices" Name="session_device_state" DataType="text" redcap:Variable="session_device_state">
+		<CodeListItem CodedValue="0"><Decode><TranslatedText>available</TranslatedText></Decode></CodeListItem>
+		<CodeListItem CodedValue="1"><Decode><TranslatedText>unavailable</TranslatedText></Decode></CodeListItem>
+		<CodeListItem CodedValue="2"><Decode><TranslatedText>maintained</TranslatedText></Decode></CodeListItem>
+	</CodeList>
+	<CodeList OID="sessions_complete.choices" Name="sessions_complete" DataType="text" redcap:Variable="sessions_complete">
+		<CodeListItem CodedValue="0"><Decode><TranslatedText>Incomplete</TranslatedText></Decode></CodeListItem>
+		<CodeListItem CodedValue="1"><Decode><TranslatedText>Unverified</TranslatedText></Decode></CodeListItem>
+		<CodeListItem CodedValue="2"><Decode><TranslatedText>Complete</TranslatedText></Decode></CodeListItem>
+	</CodeList>
+</MetaDataVersion>
+</Study>
+</ODM>

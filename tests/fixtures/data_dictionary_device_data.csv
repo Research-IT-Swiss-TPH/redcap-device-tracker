@@ -1,0 +1,12 @@
+"Variable / Field Name","Form Name","Section Header","Field Type","Field Label","Choices, Calculations, OR Slider Labels","Field Note","Text Validation Type OR Show Slider Number","Text Validation Min","Text Validation Max",Identifier?,"Branching Logic (Show field only if...)","Required Field?","Custom Alignment","Question Number (surveys only)","Matrix Group Name","Matrix Ranking?","Field Annotation"
+record_id,device,,text,"Record ID",,,,,,,,,,,,,
+device_type,device,,dropdown,"Device Type","0, A | 1, B | 2, C | 3, D",,,,,,,,,,,,
+device_registration_date,device,,text,"Device Registration Date",,,date_dmy,,,,,,,,,,
+device_suspension_date,device,,text,"Device Suspension Date",,,date_dmy,,,,,,,,,,
+session_tracking_id,sessions,,text,"Session Tracking ID",,,,,,,,,,,,,
+session_owner_id,sessions,,text,"Session Owner ID",,,,,,,,,,,,,
+session_project_id,sessions,,text,"Session Project ID",,,,,,,,,,,,,
+session_device_state,sessions,,radio,"Session Device State","0, available | 1, unavailable | 2, maintained",,,,,,,,,,,,
+session_assign_date,sessions,,text,"Session Assign Date",,,datetime_seconds_ymd,,,,,,,,,,
+session_return_date,sessions,,text,"Session Return Date",,,datetime_seconds_ymd,,,,,,,,,,
+session_reset_date,sessions,,text,"Session Reset Date",,,datetime_seconds_ymd,,,,,,,,,,

@@ -305,14 +305,13 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     // Request Handler Calls (public)
     //-----------------------------------------------------
 
-
-    /**
+        /**
      * Get Tracking Data from session_tracking_id
      * 
      * 
      * @since 1.0.0
      */
-    public function getTrackingData($record_id, $field_id, $event_id){
+    public function getTrackingDataBU($record_id, $field_id, $event_id){
 
         $response = [];
 
@@ -347,6 +346,49 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         $response = reset(json_decode($json));
 
         $this->sendResponse($response); 
+    }   
+
+    /**
+     * Get Tracking Data from session_tracking_id
+     * 
+     * 
+     * @since 1.0.0
+     */
+    public function getTrackingData($record_id, $field_id, $event_id = null){
+
+        $response = [];
+
+        $params = [
+            'project_id'    => PROJECT_ID, 
+            'records' => $record_id,
+            'fields' => $field_id,
+            'events' => $event_id,
+            'return_format' => 'json'
+        ];
+
+        $data_t = json_decode( REDCap::getData($params), true);
+
+        //  Ensure this check is secure for multiple and single events! (Also cover the case when event has data inside other instrument)
+        if(empty($data_t[0][$field_id])) {
+            return $response;
+        }
+
+        $session_tracking_id =  reset($data_t)[$field_id];
+       
+        $filterLogic = "[session_tracking_id] = '" . $session_tracking_id . "'";
+
+        $params = array(
+            'return_format' => 'json', 
+            'project_id' => $this->devices_project_id,
+            'exportAsLabels' => true,
+            'filterLogic' => $filterLogic,
+            'fields' => []            
+        );
+
+        $json = REDCap::getData($params);
+        $response = reset(json_decode($json));
+
+        return $response;
     }       
 
     /**
@@ -919,7 +961,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     * @since 1.0.0
     *
     */      
-    private function sendResponse($response) {
+    public function sendResponse($response) {
         header('Content-Type: application/json; charset=UTF-8');        
         echo json_encode($response);
         exit();
@@ -933,7 +975,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     * @since 1.0.0
     *
     */      
-    private function sendError($status = 400, $th = null, $settings = [] ) {
+    public function sendError($status = 400, $th = null, $settings = [] ) {
        
         header('Content-Type: application/json; charset=UTF-8');
         switch ($status) {

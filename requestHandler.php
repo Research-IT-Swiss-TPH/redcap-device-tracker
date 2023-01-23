@@ -10,6 +10,21 @@ const DEFAULT_MODES = array('assign', 'return', 'reset');
 if (!class_exists("Tracking")) require_once("classes/tracking.class.php");
 
 //  Get tracking data on instance mount
+// if($_REQUEST['action'] == 'get-tracking-data') {
+//     if( !isset($_GET["record_id"]) || !isset($_GET["field_id"]) || !isset($_GET["event_id"])) {
+//         header("HTTP/1.1 400 Bad Request");
+//         header('Content-Type: application/json; charset=UTF-8');    
+//         die("Invalid parameters."); 
+//     }
+
+//     $module->getTrackingData(
+//         $module->escape($_GET["record_id"]), 
+//         $module->escape($_GET["field_id"]),
+//         $module->escape($_GET["event_id"])
+//     );
+
+// }
+
 if($_REQUEST['action'] == 'get-tracking-data') {
     if( !isset($_GET["record_id"]) || !isset($_GET["field_id"]) || !isset($_GET["event_id"])) {
         header("HTTP/1.1 400 Bad Request");
@@ -17,12 +32,17 @@ if($_REQUEST['action'] == 'get-tracking-data') {
         die("Invalid parameters."); 
     }
 
-    $module->getTrackingData(
-        $module->escape($_GET["record_id"]), 
-        $module->escape($_GET["field_id"]),
-        $module->escape($_GET["event_id"])
-    );
-
+    try {
+        $response = $module->getTrackingData(
+            $module->escape($_GET["record_id"]), 
+            $module->escape($_GET["field_id"]),
+            $module->escape($_GET["event_id"])
+        );
+        $module->sendResponse($response);
+    } catch(Exception $e) {
+        $module->sendError($e->getMessage());
+    }
+    
 }
 
 //  Validation handler

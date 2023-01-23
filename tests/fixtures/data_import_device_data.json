@@ -1,0 +1,52 @@
+[
+    {
+      "record_id": "A10000",
+      "device_type": 0,
+      "device_registration_date": "2022-12-02"
+    },
+    {
+      "record_id": "A10001",
+      "device_type": 3,
+      "device_registration_date": "2022-12-02"
+    },
+    {
+      "record_id": "A10002",
+      "device_type": 2,
+      "device_registration_date": "2022-12-02"
+    },
+    {
+      "record_id": "A10003",
+      "device_type": 1,
+      "device_registration_date": "2022-12-02"
+    },
+    {
+      "record_id": "A10004",
+      "device_type": 1,
+      "device_registration_date": "2022-12-02"
+    },
+    {
+      "record_id": "A10005",
+      "device_type": 2,
+      "device_registration_date": "2022-12-02"
+    },
+    {
+      "record_id": "A10006",
+      "device_type": 3,
+      "device_registration_date": "2022-12-02"
+    },
+    {
+      "record_id": "A10007",
+      "device_type": 3,
+      "device_registration_date": "2022-12-02"
+    },
+    {
+      "record_id": "A10008",
+      "device_type": 2,
+      "device_registration_date": "2022-12-02"
+    },
+    {
+      "record_id": "A10009",
+      "device_type": 3,
+      "device_registration_date": "2022-12-02"
+    }
+  ]
