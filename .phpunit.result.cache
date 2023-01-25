@@ -1,0 +1,1 @@
+{"version":1,"defects":[],"times":{"STPH\\deviceTracker\\deviceTrackerMultipleEventsTest::testFoo":0.009,"STPH\\deviceTracker\\deviceTrackerSingleEventTest::testSystemSettingInTestContext":0,"STPH\\deviceTracker\\deviceTrackerSingleEventTest::testAssignDevice":0,"STPH\\deviceTracker\\deviceTrackerSingleEventTest::testGetTrackingData":0.006}}

@@ -9,6 +9,6 @@
         }
     },
     "scripts": {
-        "test": "./vendor/bin/phpunit --testdox --colors tests"
+        "tests": "./vendor/bin/phpunit --testdox --colors tests"
     }    
 }

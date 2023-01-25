@@ -354,12 +354,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * 
      * @since 1.0.0
      */
-    public function getTrackingData($record_id, $field_id, $event_id = null){
+    public function getTrackingData($project_id, $record_id, $field_id, $event_id = null){
 
         $response = [];
 
         $params = [
-            'project_id'    => PROJECT_ID, 
+            'project_id'    => $project_id,
             'records' => $record_id,
             'fields' => $field_id,
             'events' => $event_id,

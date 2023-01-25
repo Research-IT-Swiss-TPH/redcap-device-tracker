@@ -3,29 +3,96 @@
 namespace STPH\deviceTracker;
 
 use ExternalModules\ExternalModules;
-use Project;
+use REDCap;
 
 // For now, the path to "redcap_connect.php" on your system must be hard coded.
 require_once __DIR__ . '/../../../redcap_connect.php';
+
+
+//-----------------------------------------------------
+// Constants
+//-----------------------------------------------------
+
+const PATH_FIXTURE_DEVICE_DICT = "/fixtures/data_dictionary_device_data.csv";
+const PATH_FIXTURE_DEVICE_DATA = "/fixtures/data_import_device_data.json";
+
+const TEST_USER_ID = "phpunit_test_user";
+
+const TEST_DEVICES_RECORD_ID    = "A10000";
+const TEST_TRACKING_RECORD_ID   = 1;
+const TEST_TRACKING_FIELD_ID    = "test_tracking_field";
+
+const TEST_SETTING_DEVICE_TYPES = "0,3";
 
 abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
 
     public static array $testPIDs = [];
 
+    //-----------------------------------------------------
+    // Fixtures
+    //-----------------------------------------------------    
+
     static function setUpBeforeClass(): void
     {
+        self::echo("\n=== Setting up before class ===\n", 'raw');
         parent::setUpBeforeClass();
         self::createTestProjects();
+
+        # Fixture Projects
+        define('TEST_DEVICES_PROJECT',          explode(',', $GLOBALS['external_modules_test_pids'])[0]);
+        define('TEST_TRACKING_PROJECT_SINGLE',  explode(',', $GLOBALS['external_modules_test_pids'])[1]);
+        define('TEST_TRACKING_PROJECT_MULTPLE', explode(',', $GLOBALS['external_modules_test_pids'])[2]);
         
-        // //  Give info to see better whats up
-        // self::echo("Available forms: " . implode(", ", array_keys($Proj->forms)));
+        #   Fixture Devices Project
+        //  Create Device Project Structure    from xml PATH_FIXTURE_DEVICE_TEMP
+        self::fixtureDataDictionaryDevices();
+        //  Import Device Project Data         from csv PATH_FIXTURE_DEVICE_DATA
+        self::fixtureRecordDataDevices();
+
+        self::echo("=== Done ===\n", 'raw');
     }
 
     static function tearDownAfterClass():void{
-        // self::cleanupTestProjects();
-        // self::cleanupRecordData();
-        // self::preserveProjectsTable();
+        self::echo("\n=== Tearing down after class ===\n", 'raw');
+        self::cleanupTestProjects();
+        self::cleanupRecordData();
+        self::preserveProjectsTable();
+        self::echo("=== Done ===\n", 'raw');
     }
+
+    //-----------------------------------------------------
+    // Helpers
+    //-----------------------------------------------------
+
+    /**
+     * Fixture to import data dictionary into Devices Project
+     * 
+     */
+    static private function fixtureDataDictionaryDevices() {
+            
+        $dictionary_array = \Design::excel_to_array( dirname(__FILE__) . PATH_FIXTURE_DEVICE_DICT, "," );
+        \MetaData::save_metadata($dictionary_array, false, true, TEST_DEVICES_PROJECT);
+
+        self::echo("Data Dictionary imported to Device Data.", "fixture");            
+
+    }
+
+    /**
+     * Fixture to import record data into Devices Project
+     * 
+     */
+    static private function fixtureRecordDataDevices() {
+
+        $json = file_get_contents( dirname(__FILE__) . PATH_FIXTURE_DEVICE_DATA);
+        $params = array(
+            "project_id" => TEST_DEVICES_PROJECT,
+            "dataFormat" => 'json',
+            "data" => $json
+        );
+        $result = \Records::saveData($params);
+
+        self::echo($result["item_count"] . " items added to Device Data.", "fixture");
+    }    
 
     /**
      * Create Test Projects 
@@ -33,8 +100,8 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
      */
     static function createTestProjects() {
          // Get test PIDs
-        self::$testPIDs = ExternalModules::getTestPIDs();
-        self::echo("Test Projects have been created. (PIDs: ". implode(", ", self::$testPIDs) . ")");
+        ExternalModules::getTestPIDs();
+        self::echo("Test Projects have been created. (PIDs: ". $GLOBALS['external_modules_test_pids'] . ")");
     }
 
     /**
@@ -51,13 +118,15 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
             "DELETE FROM `redcap_config` WHERE  `field_name`='external_modules_test_pids'", []
         );
 
+        $GLOBALS['external_modules_test_pids'] = '';
+
         self::echo("Test Projects have been deleted.");
     }
 
     static function cleanupRecordData() {
 
         $sql = 'DELETE FROM redcap_data WHERE `project_id` = ?';
-        ExternalModules::query($sql, [self::$testPIDs[0]]);
+        ExternalModules::query($sql, [TEST_DEVICES_PROJECT]);
 
     }
 
@@ -97,15 +166,22 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
             $hasBuffer = true;
         }
 
-        $unicode = "\u{2588}\u{2588}";
-        $format = " \33[34m".$unicode."\33[0m \33[44m";
-
-        if($mode == "fixture") {
-            $format = " \33[35m".$unicode."\33[0m \33[45m Fixture success: ";
-        }
 
         // echo message to output with color and unicode
-        $message = $format . $message . "\33[0m\n";
+        if($mode != 'raw') {
+
+            //$unicode = "\u{2588}\u{2588}";
+            $unicode = "\u{2724}";           
+            $format = " \33[34m".$unicode."\33[0m \33[44m";
+
+            //  Different color for fixtures
+            if($mode == "fixture") {
+                $format = " \33[35m".$unicode."\33[0m \33[45mFixture success: ";
+            }
+
+             $message = $format . $message . "\33[0m\n";
+        }
+
         echo $message;
 
         // flush current buffer to output stream
@@ -120,5 +196,4 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
             ob_start();
         }
     }
-
 }

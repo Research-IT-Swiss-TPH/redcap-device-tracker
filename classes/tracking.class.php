@@ -20,9 +20,10 @@ class Tracking {
         if(!empty($request) && is_array($request) ) {
 
             
-            $this->project  = PROJECT_ID;
+            
             
             $this->mode     = htmlspecialchars($request["mode"]);
+            $this->project  = htmlspecialchars($request["pid"]);
             $this->event    = htmlspecialchars($request["event_id"]);
             $this->owner    = htmlspecialchars($request["owner_id"]);
             $this->field    = htmlspecialchars($request["field_id"]);
@@ -42,7 +43,7 @@ class Tracking {
             
 
         } else {
-            throw new Exception("Invalid Request");
+            throw new Exception("Invalid Request Input");
         }
     }
 

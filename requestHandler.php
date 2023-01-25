@@ -34,6 +34,7 @@ if($_REQUEST['action'] == 'get-tracking-data') {
 
     try {
         $response = $module->getTrackingData(
+            $module->escape($_GET["pid"]), 
             $module->escape($_GET["record_id"]), 
             $module->escape($_GET["field_id"]),
             $module->escape($_GET["event_id"])
