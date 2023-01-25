@@ -76,6 +76,8 @@ class deviceTrackerSingleEventTest extends BaseTest
        
         // $project = $this->module->getProject(TEST_TRACKING_PROJECT_SINGLE);
         // self::echo(print_r($project));
+        $expectedTrackingId = hash('sha256', TEST_TRACKING_RECORD_ID . "." . TEST_DEVICES_RECORD_ID . "." . TEST_TRACKING_PROJECT_SINGLE);
+        self::echo($expectedTrackingId);
 
         # Fixture: 
         # Add field to form_1: tracking_field
@@ -92,11 +94,13 @@ class deviceTrackerSingleEventTest extends BaseTest
             "extra"     => ""
         );
 
-        self::echo(print_r($request));
         $tracking = new Tracking($request);
-        self::echo(print_r($tracking));
+        //self::echo(print_r($tracking));
+        $result = $this->handleTracking($tracking);
+        self::echo(json_decode($result)->tracking->id);
 
-        $this->assertSame("ok", "ok");
+
+        $this->assertSame($expectedTrackingId, json_decode($result)->tracking->id);
 
     }
 

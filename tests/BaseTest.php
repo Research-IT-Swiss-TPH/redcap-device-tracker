@@ -58,9 +58,9 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
 
     static function tearDownAfterClass():void{
         self::echo("\n=== Tearing down after class ===\n", 'raw');
-        // self::cleanupTestProjects();
-        // self::cleanupRecordData();
-        // self::preserveProjectsTable();
+        self::cleanupTestProjects();
+        self::cleanupRecordData();
+        self::preserveProjectsTable();
         self::echo("=== Done ===\n", 'raw');
     }
 
@@ -70,7 +70,7 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
 
     static public function getFirstEventIdByProject($project_id) {
         $project = new Project($project_id);
-        return $event_id = $project->firstEventId;
+        return $project->firstEventId;
     }
 
  
@@ -151,8 +151,8 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
 
     static function cleanupRecordData() {
 
-        $sql = 'DELETE FROM redcap_data WHERE `project_id` = ?';
-        ExternalModules::query($sql, [TEST_DEVICES_PROJECT]);
+        $sql = 'DELETE FROM redcap_data WHERE `project_id` IN(?,?,?)';
+        ExternalModules::query($sql, [TEST_DEVICES_PROJECT, TEST_TRACKING_PROJECT_SINGLE, TEST_TRACKING_PROJECT_MULTPLE]);
 
     }
 
