@@ -3,11 +3,11 @@
 namespace STPH\deviceTracker;
 
 use ExternalModules\ExternalModules;
-use REDCap;
+use Project;
+use Vanderbilt\REDCap\Classes\ProjectDesigner;
 
 // For now, the path to "redcap_connect.php" on your system must be hard coded.
 require_once __DIR__ . '/../../../redcap_connect.php';
-
 
 //-----------------------------------------------------
 // Constants
@@ -42,6 +42,10 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
         define('TEST_DEVICES_PROJECT',          explode(',', $GLOBALS['external_modules_test_pids'])[0]);
         define('TEST_TRACKING_PROJECT_SINGLE',  explode(',', $GLOBALS['external_modules_test_pids'])[1]);
         define('TEST_TRACKING_PROJECT_MULTPLE', explode(',', $GLOBALS['external_modules_test_pids'])[2]);
+
+        define('TEST_EVENT_TRACKING_SINGLE',    self::getFirstEventIdByProject(TEST_TRACKING_PROJECT_SINGLE));
+        define('TEST_EVENT_TRACKING_MULTIPLE',  self::getFirstEventIdByProject(TEST_TRACKING_PROJECT_MULTPLE));
+
         
         #   Fixture Devices Project
         //  Create Device Project Structure    from xml PATH_FIXTURE_DEVICE_TEMP
@@ -54,15 +58,37 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
 
     static function tearDownAfterClass():void{
         self::echo("\n=== Tearing down after class ===\n", 'raw');
-        self::cleanupTestProjects();
-        self::cleanupRecordData();
-        self::preserveProjectsTable();
+        // self::cleanupTestProjects();
+        // self::cleanupRecordData();
+        // self::preserveProjectsTable();
         self::echo("=== Done ===\n", 'raw');
     }
 
     //-----------------------------------------------------
     // Helpers
     //-----------------------------------------------------
+
+    static public function getFirstEventIdByProject($project_id) {
+        $project = new Project($project_id);
+        return $event_id = $project->firstEventId;
+    }
+
+ 
+    static public function addField($project_id, $formName="form_1", $fieldParams = []) {
+
+        $fieldParams = array(
+            "field_label"   => "Test Tracking Field",
+            "field_name"    => TEST_TRACKING_FIELD_ID,
+            "field_type"    => "text"
+        );
+
+        $project = new Project($project_id);
+        $projectDesigner = new ProjectDesigner($project);
+
+        $projectDesigner->createField($formName, $fieldParams);
+
+    }
+
 
     /**
      * Fixture to import data dictionary into Devices Project

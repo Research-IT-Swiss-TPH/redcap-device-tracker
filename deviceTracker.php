@@ -9,9 +9,8 @@ if( file_exists("vendor/autoload.php") ){
     require 'vendor/autoload.php';
 }
 
-//  Require custom classes
-if (!class_exists("Tracking")) require_once("classes/tracking.class.php");
-
+//  Classes
+if (!class_exists("Tracking"))  require_once("classes/tracking.class.php");
 
 class deviceTracker extends \ExternalModules\AbstractExternalModule {    
 
@@ -42,7 +41,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     private $tracking_event;
 
     private bool $isTesting = false;
-
 
     //======================================================================
     // Methods

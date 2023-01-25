@@ -1,6 +1,9 @@
 <?php namespace STPH\deviceTracker;
 require_once __DIR__ . '/../../../redcap_connect.php';
 
+use REDCap;
+use Project;
+
 /**
  * This test class covers test cases for tracking
  * 
@@ -24,6 +27,11 @@ class deviceTrackerSingleEventTest extends BaseTest
         //  Fixture Info Tracking Project Context
         self::echo("\n==> Tracking Project ID - Single Event: " . TEST_TRACKING_PROJECT_SINGLE . "\n", 'raw');
         self::echo("=== Done ===\n", 'raw');
+
+        //  Fixture Tracking Project Fields
+        //  Add test tracking field (text)
+        self::addField(TEST_TRACKING_PROJECT_SINGLE);
+        
     }
 
 
@@ -40,21 +48,23 @@ class deviceTrackerSingleEventTest extends BaseTest
     }
 
 
-    public function testSchemaIsValid() {
+    /**
+     * Check if we have valid Device Data
+     * 
+     * count should be 10, see fixture
+     */
+    public function testDeviceDataIsValid() {
 
-        $expected = ["FOO" => "BAR"];
+        $expected = 10;
 
         $params = array(
-            'project_id' => TEST_DEVICES_PROJECT
+            'project_id' => TEST_DEVICES_PROJECT,
+            'dataFormat' => 'json',
+            'fields' => 'record_id'
         );
-        $actual = \REDCap::getData($params);
+        $actual = REDCap::getData($params);
 
-        //self::echo(print_r($actual));
-
-
-        $this->assertNotSame($expected, $actual);
-
-
+        $this->assertCount( $expected, $actual);
     }    
 
 
@@ -63,16 +73,18 @@ class deviceTrackerSingleEventTest extends BaseTest
      * 
      */
     public function testAssignDevice() {
+       
+        // $project = $this->module->getProject(TEST_TRACKING_PROJECT_SINGLE);
+        // self::echo(print_r($project));
 
-        /**
-         * Mock request array 
-         * - ignore extra for now
-         * 
-         * 
-         */
+        # Fixture: 
+        # Add field to form_1: tracking_field
+
+        # Mock request array - ignore extra for now
         $request = array(
             'mode'      => 'assign',
-            'event_id'  => 'get-event-id-from-tracking-project-form',
+            'pid'       => TEST_TRACKING_PROJECT_SINGLE,
+            'event_id'  => TEST_EVENT_TRACKING_SINGLE,
             'owner_id'  => TEST_TRACKING_RECORD_ID,
             'field_id'  => TEST_TRACKING_FIELD_ID,
             'device_id' => TEST_DEVICES_RECORD_ID,
@@ -80,10 +92,9 @@ class deviceTrackerSingleEventTest extends BaseTest
             "extra"     => ""
         );
 
-        //self::echo(print_r($request));
-        // $tracking = new Tracking(array(
-
-        // ));
+        self::echo(print_r($request));
+        $tracking = new Tracking($request);
+        self::echo(print_r($tracking));
 
         $this->assertSame("ok", "ok");
 
