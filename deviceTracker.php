@@ -69,15 +69,20 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         //  Check if we are in testing context
         $this->isTesting = ExternalModules::isTesting();
 
-        //  Setup Project Context if pid is available through request and constant is not yet defined
-        if(isset($_GET["pid"]) && !defined('PROJECT_ID')) {
-            define('PROJECT_ID', $this->escape($_GET["pid"]));
-            // global $Proj;
-            // $Proj = new Project(PROJECT_ID);
-        }
+        # Put this into try/catch so that in case of exception module can still be enabled/disabled
+        try {
+            //  Setup Project Context if pid is available through request and constant is not yet defined
+            if(isset($_GET["pid"]) && !defined('PROJECT_ID')) {
+                define('PROJECT_ID', $this->escape($_GET["pid"]));
+            }
+            
+            //  Set Device Project variables
+            $this->setDeviceProject();
 
-        //  Set Device Project variables
-        $this->setDeviceProject();
+        } catch (\Exception $e) {
+            error_log("Error during module class construction. This exception has been caught to prevent module enable/disable problems.");
+            error_log($e);
+        }
 
     }
 
@@ -89,7 +94,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     private function setDeviceProject() {
         $this->devices_project_id = $this->isTesting ? self::getTestSystemSetting("devices-project") : $this->getSystemSetting("devices-project");
-        $this->devices_event_id = (new \Project( $this->devices_project_id ))->firstEventId;
+        if(!empty($this->devices_project_id)) {
+            $this->devices_event_id = (new \Project( $this->devices_project_id ))->firstEventId;
+        }
     }
 
     /**
