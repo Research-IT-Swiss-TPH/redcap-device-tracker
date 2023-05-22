@@ -50,6 +50,7 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
             "DELETE FROM `redcap_config` WHERE  `field_name`='external_modules_test_pids'", []
         );
 
+        self::echo("\n", "noformat");
         self::echo("Test Projects have been deleted.");
     }
 
@@ -96,8 +97,11 @@ abstract class BaseTest extends \ExternalModules\ModuleBaseTest{
             $format = " \33[35m".$unicode."\33[0m \33[45m";
         }
 
-        // echo message to output with color and unicode
-        $message = $format . $message . "\33[0m\n";
+        if($mode != "noformat") {
+            // echo message to output with color and unicode
+            $message = $format . $message . "\33[0m\n";
+        }
+
         echo $message;
 
         // flush current buffer to output stream
