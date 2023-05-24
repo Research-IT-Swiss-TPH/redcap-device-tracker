@@ -13,11 +13,13 @@ namespace STPH\deviceTracker;
     </p>
 <?php    
     //dump(new \Project(15));
+    //dump("Ok");
 ?>
     
 <div id="STPH_DT_MONITOR"></div>
 
-<script>
+<script type='text/javascript'>
+    
     const stph_dt_getBaseUrlFromBackend = function () {
         return '<?= $module->getUrl("requestHandler.php") ?>'
     }
@@ -25,6 +27,11 @@ namespace STPH\deviceTracker;
     const stph_dt_getConfigFromBackend = function() {
         return <?= json_encode($module->getConfig()) ?>
     }
+
+    const stph_dt_getIsProjectPage = function() {
+        return false
+    }
+
 
 </script>
 <!-- Insert Vue.js after DOM -->

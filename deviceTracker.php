@@ -140,7 +140,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     public function redcap_control_center() {
         if($this->isPage("ExternalModules/manager/control_center.php")) {
-
             $config = $this->getConfig();
             $invalids = array_filter($config, function($el){
                 return $el["valid"] == false;
@@ -198,6 +197,10 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         }
         return false;
     
+    }
+
+    public function isProjectPage() {
+        return false;
     }
 
     /**

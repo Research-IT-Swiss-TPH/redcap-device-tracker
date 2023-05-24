@@ -1,6 +1,6 @@
 <template>
     <div>
-        <p style="padding-top:10px;color:#800000;font-weight:bold;font-family:verdana;font-size:13px;">System-Wide Tracking Logs</p>
+        <p style="padding-top:10px;color:#800000;font-weight:bold;font-family:verdana;font-size:13px;">Tracking Logs</p>
 
         <b-table 
                     show-empty

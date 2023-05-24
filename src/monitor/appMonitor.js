@@ -2,7 +2,7 @@ import Vue from 'vue'
 import App from './App.vue'
 
 //  Constants set via Backend
-var baseURL = stph_dt_getBaseUrlFromBackend();
+var baseURL = stph_dt_getBaseUrlFromBackend()
 
 //  Axios  
 import axios from 'axios'
