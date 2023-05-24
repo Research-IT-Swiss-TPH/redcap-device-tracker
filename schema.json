@@ -1,0 +1,90 @@
+{
+    "forms": [
+        {
+            "name": "device",
+            "repeating": false,
+            "fields": [
+                {
+                    "name": "device_type",
+                    "settings": [
+                        {"element_type": "select"}
+                    ]
+                },
+                {
+                    "name":"device_suspension_date",
+                    "settings": [
+                        {"element_type": "text"},
+                        {"element_validation_type": "date_dmy"}
+                    ]
+
+                },
+                {
+                    "name": "device_registration_date",
+                    "settings": [
+                        {"element_type": "text"},
+                        {"element_validation_type": "date_dmy"}
+                    ]
+                }
+            ]
+
+        },
+        {
+            "name": "sessions",
+            "repeating": true,
+            "fields": [                    
+                {
+                    "name": "session_tracking_id",
+                    "settings": [
+                        {"element_type": "text"}
+                    ]
+                },
+                {
+                    "name": "session_owner_id",
+                    "settings": [
+                        {"element_type": "text"}
+                    ]
+                },
+                {
+                    "name": "session_event_id",
+                    "settings": [
+                        {"element_type": "text"}
+                    ]
+                },
+                {
+                    "name": "session_project_id",
+                    "settings": [
+                        {"element_type": "text"}
+                    ]
+                },
+                {
+                    "name": "session_device_state",
+                    "settings": [
+                        {"element_type": "radio"},
+                        {"element_enum": "0, available \\n 1, unavailable \\n 2, maintained"}
+                    ]
+                },
+                {
+                    "name": "session_assign_date",
+                    "settings": [
+                        {"element_type": "text"},
+                        {"element_validation_type": "datetime_seconds_ymd"}
+                    ]
+                },
+                {
+                    "name": "session_return_date",
+                    "settings": [
+                        {"element_type": "text"},
+                        {"element_validation_type": "datetime_seconds_ymd"}
+                    ]
+                },
+                {
+                    "name": "session_reset_date",
+                    "settings": [
+                        {"element_type": "text"},
+                        {"element_validation_type": "datetime_seconds_ymd"}
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -47,6 +47,4 @@ class deviceTrackerTest extends BaseTest
         $this->assertSame($expected, $actual);
     }
 
-    public function test
-
 }

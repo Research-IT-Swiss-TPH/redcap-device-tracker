@@ -119,18 +119,57 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     public function redcap_every_page_top($project_id = null) {
 
-
         if($this->isValidTrackingPage()) {
             if(!$this->isValidDevicesProject()) {
                 $this->renderAlertInvalidDevices();
+                $this->renderDisableTrackingField();
             }
-            if(!$this->isValidTrackingProject()) {
+            elseif(!$this->isValidTrackingProject()) {
                 $this->renderAlertInvalidTracking();
-            } else {
+                $this->renderDisableTrackingField();
+            } 
+            else {
                 $this->renderTrackingInterface();
             }
         }
     }
+
+    /**
+     * Allows custom actions to be performed on any of the pages in REDCap's Control Center 
+     * 
+     */
+    public function redcap_control_center() {
+        if($this->isPage("ExternalModules/manager/control_center.php")) {
+
+            $config = $this->getConfig();
+            $invalids = array_filter($config, function($el){
+                return $el["valid"] == false;
+            });
+            $count = count($invalids);
+
+            if($count > 0) {
+                $this->includeControlCenterJS($count);   
+            }
+         
+        }
+    }
+
+    /**
+     * Include Javascript to embed module configuration error messages and link to module config check page
+     * 
+     */
+    private function includeControlCenterJS($count) {
+        $box = '<div class="red" style="margin-bottom:15px;padding:10px 15px;"><div style="color:#A00000;"><i class="fas fa-bell"></i> <span style="margin-left:3px;font-weight:bold;"><span id="module-config-error-count">'.$count.'</span> module configuration errors for Device Tracker are blocking its proper functionality. <a style="color:white;text-decoration:none;font-weight:normal;" href="'.$this->getUrl('link-control-center.php').'" class="btn btn-danger btn-xs ml-2">View config</a></span></div></div></div></div>';
+        ?>
+        <script type='text/javascript'>
+            $(function() {
+                $('#external-modules-enable-modules-button').before('<?= $box ?>');
+                //$('#external-modules-enabled').find('tr[data-module="device_tracker"] td').first().find(".external-modules-byline").append("Foo");
+            })
+        </script>
+        <?php
+    }
+
 
     /**
      * Check if is a valid page for tracking and sets parameters as variables
@@ -162,17 +201,137 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }
 
     /**
+     * Check if module configuration is correct
+     * 
+     * 1. Check Device Tracking Project Configuration
+     * 1.0 pid not null
+     * 1.1 project->longitudinal is false
+     * 1.2 project->multiple_arms is false
+     * 
+     * 2. Check forms
+     * 2.0 Check if form exists
+     * 2.1 Check if form fullfills repeating
+     * 
+     * 3. Check fields
+     * 3.0 Check if field exist
+     * 
+     * 4. Check field settings
+     * 4.0 Check if settings are valid
+     * 
+     */
+    public function getConfig() {
+
+        $config = array();
+
+        //  Get project id in correct context
+        $pid = $this->isTesting ? self::getTestSystemSetting("devices-project") : $this->getSystemSetting("devices-project");
+
+        /**
+         * 1.0 Check if Device Project has been set
+         * should not be null
+         * 
+         * */ 
+        $config[] = array( "id" => "1-0", "valid" => $pid !== null, "rule" => "Device Project is defined.");
+
+        // abort further checking if project unset
+        if($pid !== null) {
+
+            //  Get project object (does not populate repeating forms..)
+            $project = new \Project($pid);
+
+            /**
+             * 1.1 Check if Device Project is longitudinal
+             * should be false
+             * 
+             */
+            $config[] = array( "id" => "1-1", "valid" => $project->longitudinal === false, "rule" => "Device Project is not longitudinal");
+
+            /**
+             * 1.2 Check if Device Project has multiple arms
+             * should be false
+             * 
+             */
+            $config[] = array( "id" => "1-2", "valid" => $project->multiple_arms === false, "rule" => "Device Project has no multiple arms");
+
+
+            //  Get repeating forms
+            $repeatingForms = array_keys(reset($project->getRepeatingFormsEvents()));
+
+            //  Load rule schema from json file
+            $schema_json = file_get_contents( dirname(__FILE__) . "/schema.json");
+            $schema = json_decode($schema_json, true);
+
+            //  Loop through all forms
+            foreach ($schema["forms"] as $key_form => $form) {
+
+                /**
+                 * 2.1.x Check if form exists
+                 * should be true
+                 * 
+                 */
+                $config[] = array( "id" => "2-1-".$key_form, "valid" =>  in_array($form["name"], array_keys( $project->forms)), "rule" => "Form '" . $form["name"] . "' exists");
+
+                /**
+                 * 2.2.x Check if form is repeating
+                 * should be bool of repeating
+                 * 
+                 */
+                $config[] = array( "id" => "2-2-".$key_form, "valid" => in_array($form["name"], $repeatingForms) == $form["repeating"], "rule" => "Form '" . $form["name"] . "' is" . ($form["repeating"] ? "": " not") . " repeating");
+
+
+                //  Loop through all fields for each form
+                foreach ($form["fields"] as $key_field => $field) {
+
+                    /**
+                     * 3.0.x Check if field exists
+                     * should be true
+                     * 
+                     */
+                    $config[] = array( 
+                        "id" => "3-0-".$key_form."-".$key_field, 
+                        "valid" => $project->metadata[$field["name"]] && $project->metadata[$field["name"]]["form_name"] ==  $form["name"],
+                        "rule" => "Field '" . $field["name"] . "' exists in form '" . $form["name"] . "'");
+                 
+                    //  Loop through all settings for each field
+                    foreach ($field["settings"] as $key_setting => $setting) {
+
+                        /**
+                         * 4.0.x Check if field settings are valid
+                         * should be true
+                         * 
+                         */
+
+                        $setting_name = key($setting);
+                        $setting_value = current($setting);
+
+                        $config[] = array( 
+                            "id" => "4-0-".$key_form."-".$key_field."-".$key_setting, 
+                            "valid" => $project->metadata[$field["name"]][$setting_name] == $setting_value,
+                            "rule" => "Field '" . $field["name"] . "' has setting '". $setting_name . "' with value '" . $setting_value . "'",
+                            //  only shows diff of setting values, does not cover differences in setting names!
+                            "diff" => join(' ', array_diff(explode(" ",$project->metadata[$field["name"]][$setting_name]), explode(" ", $setting_value)))
+                        );
+
+                    }
+                }
+            }
+        }
+        return $config;
+    }
+
+    /**
      * Validate Devices project
+     * Fetch config, count invalid rules
      * 
      * 
      * @since 1.4.0
      */
     private function isValidDevicesProject() {
-        $pid = $this->isTesting ? self::getTestSystemSetting("devices-project") : $this->getSystemSetting("devices-project");
-        $project = new \Project($pid);
+        $invalids = array_filter($this->getConfig(), function($el){
+            return $el["valid"] == false;
+        });
 
-        return !$project->longitudinal && !$project->multiple_arms;
-
+        return count($invalids) == 0;
     }
 
     /**
@@ -190,6 +349,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
         $RULE_SINGLE_EVENT_SINGLE_ARM = $longitudinal == false && $multiple_arms == false;
         $RULE_MULTIP_EVENT_SINGLE_ARM = $longitudinal == true && $multiple_arms == false;
+
+        //  TBD: Check that tracking field is NOT repeating
 
         //  Is valid if any of those rules is true
         return $RULE_SINGLE_EVENT_SINGLE_ARM || $RULE_MULTIP_EVENT_SINGLE_ARM;
@@ -218,7 +379,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         //  move mounted vue instances to correct position (=vue target) 
         //  within DOM for each field
         ?>
-        <script>
+        <script type='text/javascript'>
             $(function() {
                 $(document).ready(function() {
                     var trackings =  <?=json_encode($tracking_fields) ?>;
@@ -236,7 +397,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             });
         </script>
         <!-- backend data passthrough -->
-        <script>
+        <script type='text/javascript'>
             const stph_dt_getDataFromBackend = function () {
                 return <?= $this->getDataFromBackend() ?>
             }
@@ -246,9 +407,29 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         <?php
     }
 
+    private function renderDisableTrackingField() {
+        ?>
+        <script type='text/javascript'>
+            $(function() {
+                $(document).ready(function() {
+                    console.log("Disable tracking field due to invalid devices project.");
+
+                    var tracking_fields = <?= json_encode($this->tracking_fields) ?>;
+                    tracking_fields.forEach(field => {
+                        var field_tr = $('tr#'+field+'-tr');
+                        field_tr.find('td').css('background-color', '#f8d7da');
+                        field_tr.find('input').prop('disabled', true);
+                    });
+
+                });
+            });
+        </script>
+        <?php
+    }
+
     private function renderAlertInvalid($msg) {
         ?>
-        <script>
+        <script type='text/javascript'>
             $(function() {
                 $(document).ready(function() {
                     console.log("Invalid tracking project.")
@@ -262,7 +443,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }
 
     private function renderAlertInvalidDevices() {
-        $msg = "Invalid <b>Devices Project</b><br>The current devices project is not a valid Devices Project. Please check the documentation to correctly setup your devices project with Device Tracker module.";
+        $msg = "Invalid <b>Devices Project</b><br>The current devices project is not a valid Devices Project. Please notify a REDCap administrator and check the documentation to correctly setup your devices project with Device Tracker module.";
         $this->renderAlertInvalid($msg);
     }    
 

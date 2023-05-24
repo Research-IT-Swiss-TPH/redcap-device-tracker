@@ -1,81 +1,30 @@
 <template>
-    <div>        
-        <b-table 
-            show-empty
-            striped 
-            hover 
-            empty-text="There have been no tracking actions yet."
-            :sort-by.sync="sortBy"
-            :sort-desc.sync="sortDesc"
-            :busy.sync="isBusy"
-            :per-page="perPage"
-            :current-page="currentPage"
-            :fields="fields"
-            :items="items">
-        </b-table>
-
-        <b-pagination
-            v-model="currentPage"
-            :total-rows="rows"
-            :per-page="perPage"
-        ></b-pagination>
+    <div>
+        <b-tabs content-class="mt-3">
+            <b-tab title="Config" active><p>
+                <tracking-config />
+            </p></b-tab>
+            <b-tab title="Logs">
+                <tracking-logs />
+            </b-tab>
+        </b-tabs>
     </div>
 </template>
 <script>
-
+import TrackingConfig from './components/TrackingConfig.vue'
+import TrackingLogs from './components/TrackingLogs.vue'
 export default {
     name: 'AppMonitor',
-    data() {
-      return {
-        isBusy: false,
-        sortBy: 'log_id',
-        sortDesc: true,
-        perPage: 20,
-        currentPage: 1,
-        fields: [
-          { key: 'log_id', sortable: true },
-          { key: 'message'},
-          { key: 'project_id', sortable: true},
-          { key: 'record', sortable: true },
-          { key: 'user', sortable: true },
-          { key: 'date', sortable: true },
-          { key: 'action', sortable: false },
-          { key: 'field', sortable: false },
-          { key: 'value', sortable: false },
-          { key: 'error'}
-        ],
-        items: []
-      }
-    },
-
-    methods: {
-        async logProvider() {
-                this.isBusy = true
-                this.axios({
-                    params: {
-                        action: 'provide-logs'
-                    }
-                })
-                .then( response => {
-                    this.items  = response.data
-                    //console.log(response.data)
-                })
-                .catch(e => {
-                    console.log(e.message)
-                })
-                .finally( () => {
-                    this.isBusy = false
-                })
-        }
-    },
-    computed: {
-      rows() {
-        return this.items.length
-      }
-    },
-    mounted() {
-        this.logProvider()
+    components: {
+        TrackingConfig,
+        TrackingLogs
     }
 
 }
-</script>>
+</script>
+<style>
+ .tab-content {
+    border: none;
+    padding: 0;
+ }
+</style>
