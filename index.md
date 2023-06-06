@@ -96,7 +96,7 @@ Project-Level Settings:
 ### Requirements
 
 **Devices Project**
-This project will be used by all other projects as data storage location and therefore should not be changed/edited all to often. The project design must consist of at least a "device" instrument and a "sessions" instrument (repeating). You can downlaod a project template file for importing in REDCap <a href="/xml/DeviceTrackerModule_Template_DevicesProject.REDCap.xml" download>here</a>.
+This project will be used by all other projects as data storage location and therefore should not be changed/edited all to often. The project design must consist of at least a "device" instrument and a "sessions" instrument (repeating). You can downlaod a project template file for importing in REDCap <a target="_blank" href="/DeviceTrackerModule_Template_DevicesProject.REDCap.xml">here</a>.
 
 An overview of the instrument specifications:
 
