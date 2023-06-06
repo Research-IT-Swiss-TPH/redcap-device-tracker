@@ -5,7 +5,7 @@
 
     "description": "Track devices in cross-project context, while saving all device data in a central project.",
 
-    "documentation": "README.md",
+    "documentation": "https://research-it-swiss-tph.github.io/redcap-device-tracker/",
 
     "authors": [
         {

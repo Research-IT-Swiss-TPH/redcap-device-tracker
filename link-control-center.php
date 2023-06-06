@@ -19,7 +19,7 @@ namespace STPH\deviceTracker;
 <div id="STPH_DT_MONITOR"></div>
 
 <script type='text/javascript'>
-    
+
     const stph_dt_getBaseUrlFromBackend = function () {
         return '<?= $module->getUrl("requestHandler.php") ?>'
     }
@@ -32,6 +32,9 @@ namespace STPH\deviceTracker;
         return false
     }
 
+    const stph_dt_getRootFromBackend = function() {
+        return '<?= APP_PATH_WEBROOT ?>' 
+    }
 
 </script>
 <!-- Insert Vue.js after DOM -->

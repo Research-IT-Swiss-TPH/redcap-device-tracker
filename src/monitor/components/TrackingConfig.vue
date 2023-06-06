@@ -5,12 +5,12 @@
             <div v-for="item in config" >
                 <div v-if="item.valid" class="darkgreen" style="color:green;">
                     <b>TEST {{item.id}}: {{item.rule}}</b>
-                    <br><br><img src="/redcap_v13.1.32/Resources/images/tick.png" />
+                    <br><br><img :src="rootPath" />
                     <b>SUCCESSFUL!</b>
                 </div>
                 <div v-else class="red">
                     <b>TEST {{item.id}}: {{item.rule}}</b>
-                    <br><br><img src="/redcap_v13.1.32/Resources/images/exclamation.png" />
+                    <br><br><img :src="rootPath" />
                     <b>FAILURE!</b><br/>                
                 </div>
             </div>
@@ -27,12 +27,14 @@
         data() {
             return {
                 config: [],
+                rootPath: '',
                 isProjectPage
             }
         },
 
         mounted() {
-            this.config = stph_dt_getConfigFromBackend()
+            this.config = stph_dt_getConfigFromBackend(),
+            this.rootPath = stph_dt_getRootFromBackend()+'Resources/images/tick.png',
             this.isProjectPage = stph_dt_getIsProjectPage()
         }
     }
