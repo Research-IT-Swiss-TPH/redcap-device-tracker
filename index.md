@@ -25,7 +25,7 @@ REDCap does not have a "Device Tracking" feature that keeps a log of a device's 
 - What is the usage history of a device of ID X?
 - What are the devices that a participant has used?
 
-**Module Setup**
+**Module Setup**<br>
 Device Tracker Module acts in between a fixed "Devices Project" and n "Tracking Projects" with m "Trackings". 
 
 - Devices Project:  REDCap project that serves as a system-wide device data storage. For details about project design see requirements.
@@ -44,11 +44,12 @@ The Device Life Cycle is defined in three stages that are triggered/changed by t
 ![Device Life Cycle](img/dt_device_life_cycle.png "Device Life Cycle")
 
 **Event Flow**<br>
-| Event | Description | Action |
-|---|---|---|
-| Assign | Study contributor sends device to participant and assigns this in the tracking project. | Select a device from a list of available devices from tracking instrument. This automatically sets up a new session for the selected device and changes device state to «unavailable». |
-| Return | Participant sends device back to study contributor who documents the returnal in tracking project. The device is then forwarded into maintenance. | Complete session for returned device and enter returnal date. This automatically changes device state to «maintained». |
-| Reset | Study contributor receives device from maintenance and resets its state within tracking project. | Complete maintenance for device. This automatically changes device state back to «available». |                                                                                 	|
+
+| Event  | Description                                                                                                                                       | Action                                                                                                                                                                                 |
+|--------|---------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Assign | Study contributor sends device to participant and assigns this in the tracking project.                                                           | Select a device from a list of available devices from tracking instrument. This automatically sets up a new session for the selected device and changes device state to «unavailable». |
+| Return | Participant sends device back to study contributor who documents the returnal in tracking project. The device is then forwarded into maintenance. | Complete session for returned device and enter returnal date. This automatically changes device state to «maintained».                                                                 |
+| Reset  | Study contributor receives device from maintenance and resets its state within tracking project.                                                  | Complete maintenance for device. This automatically changes device state back to «available».                                                                                          |                                                                        	|
 
 
 ### Installation
