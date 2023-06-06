@@ -66,12 +66,30 @@ This module is built on the idea of Cross-Projects, that means that it enables d
 Therefore, before you can use "Device Tracker Module" you are required to make critical module configurations on system- <u>and</u> project-level.
 
 **System-Level Configuration**<br>
-All device data will be saved inside a "Devices Project". More information on the meaning and structure of this project can be found in the requirements section. It is important to configure on system-level the unique "Devices Project" by selecting the according project in the Dropdown Menu.
+The system-level configuration of the Module should only be touched initially and not be changed over time, since it could lead to data loss!
 
-![Devices Project setting](img/dt_screen_1.jpg "Devices Project setting")
+System-Level Settings:
+
+- Devices Project: Set a unique data storage destination for all projects that use Device Tracker Module, by selecting the according project in the Dropdown Menu. More information on the meaning and structure of this project can be found in the requirements section.
+
+![System-level settings](img/dt_screen_1.jpg "System-level settings")
 
 **Project-Level Configuration**<br>
+The project-level configuration can be made on a per project and per tracking base. This means that you can add multiple trackings per project, instrument and filter by device types or combine additional steps during device events. It is recommended not to change configuration for a tracking, as soon as you have started to track data for one.
 
+Project-Level Settings:
+
+- Trackings: Add as many trackings as you want. Please beware that each tracking you add can effect the page loading time of the instrument, where you are embedding the interface.
+
+- Tracking Field: The field that should be tranfsormed into tracking interface and that stores the tracking ID value.
+
+- Filter by Device Types: Filters the tracking interfaces queries per default by device types. Use comma separated list of select values to define.
+
+- Use device data syncing: Enables/Disables extended data syncing options, so that data from the "Devices Project" and the current Tracking Project's data can be synced. Especially usefull if you would like to access data about the tracking from within the tracking project.
+
+- Use additional fields during 'XXX' action?: Allows the extension of events through additional fields, so that during "assign", "return" and "reset" more fields can/must be filled out by the study worker.
+
+![Project-level settings](img/dt_screen_2.jpg "Project-level settings")
 
 
 ### Requirements
