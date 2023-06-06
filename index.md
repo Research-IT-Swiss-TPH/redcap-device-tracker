@@ -49,8 +49,7 @@ The Device Life Cycle is defined in three stages that are triggered/changed by t
 |--------|---------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Assign | Study contributor sends device to participant and assigns this in the tracking project.                                                           | Select a device from a list of available devices from tracking instrument. This automatically sets up a new session for the selected device and changes device state to «unavailable». |
 | Return | Participant sends device back to study contributor who documents the returnal in tracking project. The device is then forwarded into maintenance. | Complete session for returned device and enter returnal date. This automatically changes device state to «maintained».                                                                 |
-| Reset  | Study contributor receives device from maintenance and resets its state within tracking project.                                                  | Complete maintenance for device. This automatically changes device state back to «available».                                                                                          |                                                                        	|
-
+| Reset  | Study contributor receives device from maintenance and resets its state within tracking project.                                                  | Complete maintenance for device. This automatically changes device state back to «available».                                                                                          |
 
 ### Installation
 
@@ -66,15 +65,26 @@ After successfully installing the module you should be able to enable the module
 This module is built on the idea of Cross-Projects, that means that it enables data flow between REDCap projects, whereby a single project is used as system-wide data storage for the module's use case.
 Therefore, before you can use "Device Tracker Module" you are required to make critical module configurations on system- <u>and</u> project-level.
 
-**System-Level Configuration**
+**System-Level Configuration**<br>
 All device data will be saved inside a "Devices Project". More information on the meaning and structure of this project can be found in the requirements section. It is important to configure on system-level the unique "Devices Project" by selecting the according project in the Dropdown Menu.
 
-![Devices Project setting](img/screen/dt_screen_1.jpg "Devices Project setting")
+![Devices Project setting](img/dt_screen_1.jpg "Devices Project setting")
 
-**Project-Level Configuration**
+**Project-Level Configuration**<br>
+
 
 
 ### Requirements
 
-**Devices Projects**
-This project will be used by all other projects as data storage location and therefore should not be changed/edited all to often.
+**Devices Project**
+This project will be used by all other projects as data storage location and therefore should not be changed/edited all to often. The project design must consist of at least a "device" instrument and a "sessions" instrument (repeating). You can downlaod a project template file for importing in REDCap <a src="/xml/DeviceTrackerModule_Template_DevicesProject.REDCap.xml" download>here</a>.
+
+An overview of the instrument specifications:
+
+device - Instrument
+
+![Devices Project Design device instrument](img/dt_devices_project_devices.jpg "Devices Project Design device instrument")
+
+sessions - Instrument
+
+![Devices Project Design sessions instrument](img/dt_devices_project_sessions.jpg "Devices Project Design sessions instrument")
