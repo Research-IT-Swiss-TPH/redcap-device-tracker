@@ -11,19 +11,19 @@ Overview:
 ### Introduction
 This module has been developed for a specific use case under specific requirements. Therefore it may be very fitting to your needs or not a solution at all. Please read carefully the below information before deciding to use the module in your project. Customizations and changes in the core idea are not possible.
 
-**Use Case**<br>
+**Motivation**<br>
+REDCap does not have a "Device Tracking" feature that keeps a log of a device's "Life Cycles" associated with a participant's tracking history. A "Device Tracking" solution may answer following questions:
+- Is a device with ID X of Type Y in the state "available", "unavailable" or "maintained"?
+- Which devices are in the state "available", "unavailable" or "maintained"?
+- What is the usage history of a device of ID X?
+- What are the devices that a participant has used?
+
 A project requires tracking of participants with Tracking Devices.The typical environment parameters are as follows:
 - The IDs of participants and devices are pre-defined / known
 - There are more participants than tracking devices
 - There are multiple tracking device types
 - One device can be used for multiple tracking sessions
 - Tacking devices need to be maintained between sessions
-
-REDCap does not have a "Device Tracking" feature that keeps a log of a device's "Life Cycles" associated with a participant's tracking history. A "Device Tracking" solution may answer following questions:
-- Is a device with ID X of Type Y in the state "available", "unavailable" or "maintained"?
-- Which devices are in the state "available", "unavailable" or "maintained"?
-- What is the usage history of a device of ID X?
-- What are the devices that a participant has used?
 
 **Module Setup**<br>
 Device Tracker Module acts in between a fixed "Devices Project" and n "Tracking Projects" with m "Trackings". 
@@ -67,6 +67,7 @@ Therefore, before you can use "Device Tracker Module" you are required to make c
 
 **System-Level Configuration**<br>
 The system-level configuration of the Module should only be touched initially and not be changed over time, since it could lead to data loss!
+To be sure you have made the correct configuration, you can access the "Configuration Check" page of the Device Tracker Module within Control Center, listed under "External Modules". If any of the required configurations is not green, the module functionality will be blocked system-wide.
 
 System-Level Settings:
 
@@ -95,14 +96,21 @@ Project-Level Settings:
 ### Requirements
 
 **Devices Project**
-This project will be used by all other projects as data storage location and therefore should not be changed/edited all to often. The project design must consist of at least a "device" instrument and a "sessions" instrument (repeating). You can downlaod a project template file for importing in REDCap <a src="/xml/DeviceTrackerModule_Template_DevicesProject.REDCap.xml" download>here</a>.
+This project will be used by all other projects as data storage location and therefore should not be changed/edited all to often. The project design must consist of at least a "device" instrument and a "sessions" instrument (repeating). You can downlaod a project template file for importing in REDCap <a href="/xml/DeviceTrackerModule_Template_DevicesProject.REDCap.xml" download>here</a>.
 
 An overview of the instrument specifications:
 
-device - Instrument
-
 ![Devices Project Design device instrument](img/dt_devices_project_devices.jpg "Devices Project Design device instrument")
 
-sessions - Instrument
-
 ![Devices Project Design sessions instrument](img/dt_devices_project_sessions.jpg "Devices Project Design sessions instrument")
+
+### How to use
+The typical use case of "Device Tracker" is:
+
+- Import a list of devices to the "Devices Data" project of device type A
+- Create a Tracking Project A and configure a new Tracking A that filters by devices of type A
+- Open the according tracking instrument and search for a device (or scan the device id) within the tracking interface
+- If you find the device assign a tracking to it and continue the whole device life cycle as you need it
+- You can follow tracking events through the tracking-, project- or sytem-level log
+
+![Device Tracker Demo](img/demo_device_tracker.gif "Device Tracker Demo")
