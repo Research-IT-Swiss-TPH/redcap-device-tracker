@@ -9,35 +9,6 @@ const DEFAULT_MODES = array('assign', 'return', 'reset');
 //  Require tracking class
 if (!class_exists("Tracking")) require_once("classes/tracking.class.php");
 
-//  Get tracking data on instance mount
-if($_REQUEST['action'] == 'get-tracking-data') {
-    if( !isset($_GET["record_id"]) || !isset($_GET["field_id"]) || !isset($_GET["event_id"])) {
-        header("HTTP/1.1 400 Bad Request");
-        header('Content-Type: application/json; charset=UTF-8');    
-        die("Invalid parameters."); 
-    }
-
-    $module->getTrackingData(
-        $module->escape($_GET["record_id"]), 
-        $module->escape($_GET["field_id"]),
-        $module->escape($_GET["event_id"])
-    );
-
-}
-
-//  Validation handler
-if ($_REQUEST['action'] == 'validate-device') {
-    if(!isset($_GET["device_id"]) || !isset($_GET["tracking_field"])) {
-        header("HTTP/1.1 400 Bad Request");
-        header('Content-Type: application/json; charset=UTF-8');    
-        die("Invalid parameters."); 
-    }
-    $module->validateDevice(
-        $module->escape($_GET["device_id"]),
-        $module->escape($_GET["tracking_field"])
-    );
-} 
-
 //  Tracking Handler
 if( ($_REQUEST['action'] == 'handle-tracking') ) {
    

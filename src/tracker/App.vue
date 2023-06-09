@@ -98,25 +98,17 @@
     methods: {
 
       async getTrackingData() {
-
-        this.axios({
-                    params: {
-                        action: 'get-tracking-data',
-                        record_id: this.page.record_id,
-                        field_id: this.field,
-                        event_id: this.page.event_id
-                    }
-                })
-                .then( response => {
-                  console.log(response.data)
-                  if(response.data.session_tracking_id !== undefined) {
-                    this.tracking = response.data
+        stph_dt_jsmo.ajax('get-tracking-data', this.field)
+          .then( response => {
+                  if(response.session_tracking_id !== undefined) {
+                    this.tracking = response
                   } else {
                     console.log("No tracking.")
                   }
                 })
                 .catch(e => {
-                    console.log(e.message)
+                  console.log("Failed to get tracking data.")
+                  console.log(e.message)
                 })
                 .finally( () => {
                   this.isLoading = false

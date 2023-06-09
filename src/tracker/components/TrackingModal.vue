@@ -170,25 +170,31 @@ import SweetAlert from './SweetAlert.vue'
                 this.isValidating = true
                 //  trim blank spaces for usability noobs
                 this.userInput = this.userInput.trim()
-                this.axios({
-                    params: {
-                        action: 'validate-device',
-                        device_id: this.userInput,
-                        tracking_field: this.field
-                    }
-                })
-                .then( response => {
-                    //this.device_id = response.data.device_id;
-                    document.activeElement.blur();
-                    this.isValidDevice = true
-                })
-                .catch(e => {
-                    this.isValidDevice = false
-                    console.log(e.message)
-                })
-                .finally( () => {
-                    this.isValidating = false
-                })
+                
+                console.log("validate device via jsmo")
+                stph_dt_jsmo
+                    .ajax('validate-device', {
+                        field: this.field, 
+                        device: this.userInput
+                    })
+                    .then( response => {
+
+                        if(response.length === 0 && typeof response == "object") {
+                            this.isValidDevice = false
+                        } else {
+                            document.activeElement.blur();
+                            this.isValidDevice = true
+                        }
+
+                    })
+                    .catch(e => {
+                        this.isValidDevice = false
+                        console.log("Failed to validate device.")
+                        console.log(e)
+                    })
+                    .finally( () => {
+                        this.isValidating = false
+                    })
             }
             
         },

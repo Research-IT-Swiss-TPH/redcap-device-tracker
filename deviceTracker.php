@@ -88,6 +88,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
     /**
      * Set Device Project variables
+     * @return void
      * 
      * Covers test context
      * @since 1.0.0
@@ -102,6 +103,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     /**
      * Mock test system setting that 
      * are not accessible through getSystemSetting
+     * @return Integer
      * 
      * @since 1.0.0
      */
@@ -113,25 +115,65 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }    
     
     /**
-     * Hooks Device Tracker module to redcap_every_page_top
+     * Allows custom actions to be performed on a data entry form (excludes survey pages) 
      *
      * @since 1.0.0
      */
-    public function redcap_every_page_top($project_id = null) {
+    public function redcap_data_entry_form($project_id, $record) {
 
         if($this->isValidTrackingPage()) {
-            if(!$this->isValidDevicesProject()) {
+
+            if(is_null($record)) {
+                $this->renderAlertInvalidRecord();
+                
+            }
+            elseif(!$this->isValidDevicesProject()) {
                 $this->renderAlertInvalidDevices();
-                $this->renderDisableTrackingField();
+                
             }
             elseif(!$this->isValidTrackingProject()) {
                 $this->renderAlertInvalidTracking();
-                $this->renderDisableTrackingField();
+                
             } 
             else {
+                $this->initializeJavascriptModuleObject();
                 $this->renderTrackingInterface();
             }
         }
+    }
+
+    /**
+     * Triggered by calling the ajax() method of the Javascript Module Object.
+     * Used to make (un-)authenticated ajax calls from Front to Back
+     * 
+     */
+    public function redcap_module_ajax($action, $payload, $project_id, $record, $instrument, $event_id) {
+
+        //  Switch ajax actions
+        switch ($action) {
+
+            case'get-tracking-data':
+                $field = $payload;            
+                return $this->getTrackingData(
+                    $record, 
+                    $field, 
+                    $event_id
+                );
+                break;
+
+            case 'validate-device':
+                $data = (object) $payload;
+                return $this->validateDevice(
+                    $data->device, 
+                    $data->field
+                );
+                break;
+                
+            default:
+                # code...
+                break;
+        }
+
     }
 
     /**
@@ -362,7 +404,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
     /**
      * Render HTML and Javascript to insert Vue Instance
-     * 
+     * @return void
      * 
      * @since 1.0.0
      */
@@ -405,11 +447,21 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 return <?= $this->getDataFromBackend() ?>
             }
         </script>
+        <!-- JavaScript Module Object -->
+        <script>
+            const stph_dt_jsmo = <?=$this->getJavascriptModuleObjectName()?>;
+        </script>
         <!-- actual vue scripts -->
         <script src="<?= $this->getUrl('./dist/appTracker.js') ?>"></script>
         <?php
     }
 
+    /**
+     * Disables Trakcking fields 
+     * @return void
+     * 
+     * @since 2.0.0
+     */
     private function renderDisableTrackingField() {
         ?>
         <script type='text/javascript'>
@@ -430,6 +482,25 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         <?php
     }
 
+    /**
+     * Render invalid record message
+     * @return void
+     * 
+     * @since 2.0.0
+     */
+    private function renderAlertInvalidRecord() {
+        $msg = "Invalid <b>record</b>. Cannot use <i>Device Tracker Module</i> on a record in <u>draft mode</u>. Please save the record first to proceed with tracking.";
+        $this->renderAlertInvalid($msg);
+        $this->renderDisableTrackingField();
+    }
+
+    /**
+     * Render invalidation alert
+     * @param String $msg
+     * @return void
+     * 
+     * @since 2.0.0
+     */
     private function renderAlertInvalid($msg) {
         ?>
         <script type='text/javascript'>
@@ -448,6 +519,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     private function renderAlertInvalidDevices() {
         $msg = "Invalid <b>Devices Project</b><br>The current devices project is not a valid Devices Project. Please notify a REDCap administrator and check the documentation to correctly setup your devices project with Device Tracker module.";
         $this->renderAlertInvalid($msg);
+        $this->renderDisableTrackingField();
     }    
 
     /**
@@ -457,7 +529,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     private function renderAlertInvalidTracking() {
         $msg = "Invalid <b>Tracking Project</b><br>The current tracking project is not a valid Tracking Project. Please check the documentation to correctly setup your tracking project with Device Tracker module.";
-        $this->renderAlertInvalid($msg);  
+        $this->renderAlertInvalid($msg);
+        $this->renderDisableTrackingField();
     }
 
 
@@ -494,16 +567,21 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
     //-----------------------------------------------------
     // Request Handler Calls (public)
+    // JSMO Methods
     //-----------------------------------------------------
-
 
     /**
      * Get Tracking Data from session_tracking_id
      * 
      * 
-     * @since 1.0.0
+     * @since 2.0.0
      */
-    public function getTrackingData($record_id, $field_id, $event_id){
+    private function getTrackingData($record_id, $field_id, $event_id) {
+
+        //  block requests from unsaved record pages
+        if (ExternalModules::isTemporaryRecordId($record_id)) {
+            return "Cannot process unsaved records.";
+        }
 
         $response = [];
 
@@ -514,12 +592,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             'events' => $event_id,
             'return_format' => 'json'
         ];
-
         $data_t = json_decode( REDCap::getData($params), true);
 
-        //  Ensure this check is secure for multiple and single events! (Also cover the case when event has data inside other instrument)
+        //  Ensure this check is secure for multiple and single events! 
+        //  also cover the case when event has data inside other instrument
         if(empty($data_t[0][$field_id])) {
-            $this->sendResponse($response);
+            return $response;
         }
 
         $session_tracking_id =  reset($data_t)[$field_id];
@@ -537,29 +615,25 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         $json = REDCap::getData($params);
         $response = reset(json_decode($json));
 
-        $this->sendResponse($response); 
-    }       
-
+        return $response;
+    }
+    
     /**
      * Validate device by device_id and tracking_field
      * 
      * 
-     * @since 1.0.0
-     */
-    public function validateDevice(string $device_id, string $trackingField) {
-
+     * @since 2.0.0
+     */    
+    private function validateDevice(string $device_id, string $trackingField) {
         $types = $this->getDeviceTypesForField($trackingField);
         $availableDevices = $this->getAvailableDevices($types);
-
         $device = $availableDevices[$device_id];
-        if(isset($device)) {
-            $this->sendResponse(
-                array("device_id" => $device_id)
-            );
-        } else {
-            $this->sendError(404);
-        }
 
+        if(isset($device)) {
+            return array("device_id" => $device_id);
+        } else {
+            return array();
+        }
     }
     
 
