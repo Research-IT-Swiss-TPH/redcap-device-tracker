@@ -168,6 +168,14 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                     $data->field
                 );
                 break;
+            
+            case 'get-additional-fields':
+                $data = (object) $payload;
+                return $this->getAdditionalFields(
+                    $data->mode, 
+                    $data->field
+                );
+                break; 
                 
             default:
                 # code...
@@ -635,13 +643,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             return array();
         }
     }
-    
 
     /**
      * Get Additional Fields for different actions
      * 
-     * @since 1.0.0
-     */
+     * @since 2.0.0
+     */    
     public function getAdditionalFields($mode, $field) {
 
         $additionalFields = [];
@@ -654,10 +661,10 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             }
         }
 
-        $this->sendResponse($additionalFields);
+        return $additionalFields;
 
     }
-
+    
     /**
      * Handle Tracking Action
      * 

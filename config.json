@@ -24,7 +24,8 @@
 
     "auth-ajax-actions": [
         "get-tracking-data",
-        "validate-device"
+        "validate-device",
+        "get-additional-fields"
     ],
 
     "framework-version": 10,

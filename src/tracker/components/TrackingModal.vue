@@ -225,27 +225,22 @@ import SweetAlert from './SweetAlert.vue'
         },
 
         async loadAdditionalFields() {
-
-            this.axios({
-                params: {                        
-                        action: 'get-additional-fields',
-                        mode: this.modalMode,
-                        field_id: this.field,
-                    }
+            stph_dt_jsmo
+                .ajax('get-additional-fields',{
+                    mode: this.modalMode,
+                    field: this.field
                 })
-                .then((response) => {
-                    this.additionalFields = response.data
-                    //console.log(response.data)
+                .then( (response) => {
+                    this.additionalFields = response
                 })
                 .catch(e => {
                     console.log(e)
                 })
-                .finally(()=>{
+                .finally( () => {
                     setTimeout(()=>{
                         this.isAdded = true
                     }, 750)
-                })            
-
+                })
         },
 
         setProcessSuccess() {

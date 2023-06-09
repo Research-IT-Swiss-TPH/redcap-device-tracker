@@ -29,14 +29,6 @@ if( ($_REQUEST['action'] == 'handle-tracking') ) {
 
 }
 
-//  Get additional fields inside modal
-if($_REQUEST['action'] == 'get-additional-fields') {
-    $module->getAdditionalFields(
-        $module->escape($_GET["mode"]),
-        $module->escape($_GET["field_id"])
-    );
-}
-
 //  Log Handler for tracking field
 if ($_REQUEST['action'] == 'get-tracking-logs')  {
     if(!isset($_GET["owner_id"]) || !isset($_GET["tracking_field"])) {
