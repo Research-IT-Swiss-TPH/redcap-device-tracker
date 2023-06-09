@@ -200,25 +200,30 @@ import SweetAlert from './SweetAlert.vue'
 
         async processAction() {
             this.isProcessing = true
-            this.axios({
-                params: {        
-                        action: 'handle-tracking',           
-                        mode: this.modalMode,
-                        event_id: this.page.event_id,
-                        owner_id: this.page.record_id,
-                        field_id: this.field,
-                        device_id: this.deviceId,
-                        user_id: this.page.user_id,
-                        extra: JSON.stringify(this.extra)
-                    }
+            stph_dt_jsmo
+                .ajax('handle-tracking', {
+                    mode: this.modalMode,
+                    event_id: this.page.event_id,
+                    owner_id: this.page.record_id,
+                    field_id: this.field,
+                    device_id: this.deviceId,
+                    user_id: this.page.user_id,
+                    extra: JSON.stringify(this.extra)
                 })
-                .then(() => {
+                .then( (response) => {
                     this.setProcessSuccess()
                 })
-                .catch(error => {
-                    this.handleAxiosError(error)
+                .catch(e => {                    
+                    this.hasActionError = true
+                    this.actionError = {
+                        data: {
+                            message: e
+                        },
+                        msg: "The tracking action could not be processed."                        
+                    }
+                    console.log(e)
                 })
-                .finally(()=>{
+                .finally( () => {
                     this.isProcessing = false
                 })
         },

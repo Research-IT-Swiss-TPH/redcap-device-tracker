@@ -4,6 +4,8 @@ use Exception;
 
 class Tracking {
 
+    const DEFAULT_MODES = array('assign', 'return', 'reset');
+
     public String $mode;
     public String $id;
     public Int $project;
@@ -15,34 +17,32 @@ class Tracking {
     public String $user;
     public String $timestamp;
 
-    public function __construct($request = []) {
+    public function __construct($data) {
 
-        if(!empty($request) && is_array($request) ) {
+        if(!empty($data)) {
 
-            
+            if( !in_array( $data->mode, self::DEFAULT_MODES)) {
+                throw new Exception("Invalid Tracking Mode");
+            }
+
             $this->project  = PROJECT_ID;
-            
-            $this->mode     = htmlspecialchars($request["mode"]);
-            $this->event    = htmlspecialchars($request["event_id"]);
-            $this->owner    = htmlspecialchars($request["owner_id"]);
-            $this->field    = htmlspecialchars($request["field_id"]);
-            $this->device   = htmlspecialchars($request["device_id"]);
-            $this->user     = htmlspecialchars($request["user_id"]);
+            $this->mode = $data->mode;
+            $this->event = $data->event_id;
+            $this->owner = $data->owner_id;
+            $this->field = $data->field_id;
+            $this->device = $data->device_id;
+            $this->user = $data->user_id;
 
             //  Replace this in future with https://github.com/ramsey/uuid
             $this->id       = hash('sha256', $this->owner . "." . $this->device . "." . $this->project);
             $this->timestamp = date("Y-m-d H:i:s");
 
-            //  escape converts json string into special HTML entitites,
-            //  we need to revert in order to json decode
             $this->extra = [];
-            if(!empty($request["extra"]) && is_array(json_decode($request["extra"], true))) {
-                $this->extra = array_map("htmlspecialchars", json_decode($request["extra"], true));
-            }            
-            
-
+            if(!empty($data->extra) && is_array(json_decode($data->extra, true))) {
+                $this->extra = json_decode($data->extra, true);
+            }
         } else {
-            throw new Exception("Invalid Request");
+            throw new Exception("Invalid tracking data.");
         }
     }
 

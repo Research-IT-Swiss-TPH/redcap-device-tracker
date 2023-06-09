@@ -187,6 +187,14 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             case 'provide-logs':
                 return $this->provideLogs();
                 break;
+
+            case 'handle-tracking':
+                $data = (object) $payload;
+                $tracking  = new Tracking($data);
+                return $this->handleTracking(
+                    $tracking
+                );
+                break;
                 
             default:
                 # code...
@@ -563,9 +571,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         //  Initialize
         $data = [];
 
-        //  Base URL for Axios Requests
-        $data["base_url"] = $this->getUrl("requestHandler.php");
-
         //  Page Data
         $data["page"] = [
             "path"       => PAGE_FULL,
@@ -585,7 +590,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
 
     //-----------------------------------------------------
-    // Request Handler Calls (public)
     // JSMO Methods
     //-----------------------------------------------------
 
@@ -675,14 +679,15 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return $additionalFields;
 
     }
+
     
     /**
-     * Handle Tracking Action
+     * Handle Tracking Actions
      * 
      * 
-     * @since 1.0.0
+     * @since 2.0.0
      */
-    public function handleTracking(Tracking $tracking) {
+    private function handleTracking(Tracking $tracking) {
 
         //  Initialize variables
         $tracking_settings = [];       
@@ -878,7 +883,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             ]);
 
             //  Send to Frontend
-            $this->sendError(500, $th, $tracking_settings);
+            //  since the current jsmo has no extended error handling, we only return an exception message
+            //$this->sendError(500, $th, $tracking_settings);
+            throw new Exception($th->getMessage());
         }
 
         $response = array(
@@ -892,7 +899,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             "settings" => $tracking_settings
         );
 
-        $this->sendResponse($response);
+        return $response;
     }
     /**
      * Provide logs for monitoring

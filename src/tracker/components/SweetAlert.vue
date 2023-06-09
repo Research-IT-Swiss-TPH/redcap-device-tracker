@@ -37,7 +37,7 @@
                     <p class="text-monospace">{{ error.data.message }}</p>
                     <hr>
                     <p class="mb-0">
-                        An administrator has been notified about the issue.
+                        Please notfiy a REDCap administrator about the issue.
                     </p>
                 </b-alert>
             </div>            
