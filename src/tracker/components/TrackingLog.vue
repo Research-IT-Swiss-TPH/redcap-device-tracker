@@ -33,20 +33,20 @@
     },
     methods: {
         async getTrackingLogs() {
-            this.axios({
-                params: {                        
-                        action: 'get-tracking-logs',
-                        owner_id: this.record,
-                        tracking_field: this.field,
-                    }
+            stph_dt_jsmo
+                .ajax('get-tracking-logs', {
+                    owner: this.record,
+                    field: this.field
                 })
-                .then((response) => {
-                    this.isProcessing = false
-                    this.items = response.data
-                    //console.log(response.data)
+                .then( (response) => {
+                    //console.log(response)
+                    this.items = response
                 })
-                .catch(e => {
+                .catch( (e) => {
                     console.log(e)
+                })
+                .finally( () => {
+                    this.isProcessing = false
                 })
         }
     },

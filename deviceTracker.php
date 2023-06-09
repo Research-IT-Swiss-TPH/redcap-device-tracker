@@ -161,9 +161,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 );
                 break;
 
-            case 'validate-device':
+            case 'get-valid-device':
                 $data = (object) $payload;
-                return $this->validateDevice(
+                return $this->getValidDevice(
                     $data->device, 
                     $data->field
                 );
@@ -175,7 +175,18 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                     $data->mode, 
                     $data->field
                 );
-                break; 
+                break;
+
+            case 'get-tracking-logs':
+                $data = (object) $payload;
+                return $this->getTrackingLogs(
+                    $data->owner,
+                    $data->field
+                );
+
+            case 'provide-logs':
+                return $this->provideLogs();
+                break;
                 
             default:
                 # code...
@@ -627,12 +638,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }
     
     /**
-     * Validate device by device_id and tracking_field
+     * Get a valid device
      * 
      * 
      * @since 2.0.0
      */    
-    private function validateDevice(string $device_id, string $trackingField) {
+    private function getValidDevice(string $device_id, string $trackingField) {
         $types = $this->getDeviceTypesForField($trackingField);
         $availableDevices = $this->getAvailableDevices($types);
         $device = $availableDevices[$device_id];
@@ -649,7 +660,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * 
      * @since 2.0.0
      */    
-    public function getAdditionalFields($mode, $field) {
+    private function getAdditionalFields($mode, $field) {
 
         $additionalFields = [];
 
@@ -881,16 +892,15 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             "settings" => $tracking_settings
         );
 
-        $this->sendResponse($response);         
+        $this->sendResponse($response);
     }
-
     /**
      * Provide logs for monitoring
      * Limits to project context
      * 
-     * @since 1.0.0
+     * @since 2.0.0
      */
-    public function provideLogs() {
+    private function provideLogs() {
 
         //  Initiate logs variable
         $logs = [];
@@ -912,11 +922,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         }
         $result->close();
 
-        //  Return response
-        $this->sendResponse($logs);
-
+        return $logs;
     }
-
 
     //-----------------------------------------------------
     // Controllers
@@ -1156,13 +1163,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         
     }
 
-
     /**
      * Get Logs for a tracking/field pair
      * 
-     * @since 1.0.0
+     * @since 2.0.0
      */
-    public function getTrackingLogs($record, $field) {
+    private function getTrackingLogs($record, $field) {
 
         $sql = "select log_id, message, user, action, field, date where message = ? AND record = ? AND field = ?";
         $parameters = ['tracking-action', $record, $field];
@@ -1178,10 +1184,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $logs[] = $entry;
         }
 
-        $this->sendResponse($logs);
-
-    }
-
+        return $logs;
+    }    
 
    /**  
     * 

@@ -171,9 +171,8 @@ import SweetAlert from './SweetAlert.vue'
                 //  trim blank spaces for usability noobs
                 this.userInput = this.userInput.trim()
                 
-                console.log("validate device via jsmo")
                 stph_dt_jsmo
-                    .ajax('validate-device', {
+                    .ajax('get-valid-device', {
                         field: this.field, 
                         device: this.userInput
                     })
@@ -189,7 +188,7 @@ import SweetAlert from './SweetAlert.vue'
                     })
                     .catch(e => {
                         this.isValidDevice = false
-                        console.log("Failed to validate device.")
+                        console.log("Failed to get valid device.")
                         console.log(e)
                     })
                     .finally( () => {

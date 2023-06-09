@@ -29,25 +29,6 @@ if( ($_REQUEST['action'] == 'handle-tracking') ) {
 
 }
 
-//  Log Handler for tracking field
-if ($_REQUEST['action'] == 'get-tracking-logs')  {
-    if(!isset($_GET["owner_id"]) || !isset($_GET["tracking_field"])) {
-        header("HTTP/1.1 400 Bad Request");
-        header('Content-Type: application/json; charset=UTF-8');    
-        die("Invalid parameters."); 
-    }
-    $module->getTrackingLogs(
-        $module->escape($_GET["owner_id"]), 
-        $module->escape($_GET["tracking_field"])
-    );
-}
-
-//  Provide Logs fo monitoring
-if ($_REQUEST['action'] == 'provide-logs')  {
-    $module->provideLogs();
-}
-
-
 //  General Error handler
 else {
     header("HTTP/1.1 400 Bad Request");

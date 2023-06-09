@@ -50,16 +50,11 @@
         },
         
         methods: {
-            async logProvider() {
-                    this.isBusy = true
-                    this.axios({
-                        params: {
-                            action: 'provide-logs'
-                        }
-                    })
-                    .then( response => {
-                        this.items  = response.data
-                        //console.log(response.data)
+            async logProvider() {                    
+                stph_dt_jsmo
+                    .ajax('provide-logs')
+                    .then((response) => {
+                        this.items  = response
                     })
                     .catch(e => {
                         console.log(e.message)
@@ -75,6 +70,7 @@
         }
         },
         mounted() {
+            this.isBusy = true
             this.logProvider()
         }
     }

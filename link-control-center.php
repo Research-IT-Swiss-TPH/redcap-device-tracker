@@ -2,6 +2,8 @@
 /** @var \STPH\deviceTracker\deviceTracker $module */
 namespace STPH\deviceTracker;
 
+$module->initializeJavascriptModuleObject();
+
 ?>
 <h4 style="margin-top:0;" class="clearfix">
 	<div class="pull-left float-left">
@@ -15,7 +17,7 @@ namespace STPH\deviceTracker;
     //dump(new \Project(15));
     //dump("Ok");
 ?>
-    
+
 <div id="STPH_DT_MONITOR"></div>
 
 <script type='text/javascript'>
@@ -35,6 +37,9 @@ namespace STPH\deviceTracker;
     const stph_dt_getRootFromBackend = function() {
         return '<?= APP_PATH_WEBROOT ?>' 
     }
+
+    const stph_dt_jsmo = <?=$module->getJavascriptModuleObjectName()?>
+    
 
 </script>
 <!-- Insert Vue.js after DOM -->

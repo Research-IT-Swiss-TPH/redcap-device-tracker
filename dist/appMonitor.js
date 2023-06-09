@@ -178,20 +178,14 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                _this.isBusy = true;
-                _this.axios({
-                  params: {
-                    action: 'provide-logs'
-                  }
-                }).then(function (response) {
-                  _this.items = response.data;
-                  //console.log(response.data)
+                stph_dt_jsmo.ajax('provide-logs').then(function (response) {
+                  _this.items = response;
                 })["catch"](function (e) {
                   console.log(e.message);
                 })["finally"](function () {
                   _this.isBusy = false;
                 });
-              case 2:
+              case 1:
               case "end":
                 return _context.stop();
             }
@@ -206,6 +200,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     }
   },
   mounted: function mounted() {
+    this.isBusy = true;
     this.logProvider();
   }
 });
