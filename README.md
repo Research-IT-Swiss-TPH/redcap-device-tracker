@@ -14,3 +14,11 @@ REDCap External Module to cover the case for cross-project multi-device tracking
   - [ ] tracking search
   - [ ] device reporting
   - [ ] multi-lang
+
+
+## Running tests
+
+```bash
+  $ composer install --save-dev
+  $ composer run-script test
+```
