@@ -73,6 +73,10 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   data: function data() {
@@ -50290,43 +50294,67 @@ var render = function () {
             ),
             _vm._v(" "),
             _vm._l(_vm.config, function (item) {
-              return _c("div", [
-                item.valid
-                  ? _c(
-                      "div",
-                      {
-                        staticClass: "darkgreen",
-                        staticStyle: { color: "green" },
-                      },
-                      [
-                        _c("b", [
-                          _vm._v(
-                            "TEST " + _vm._s(item.id) + ": " + _vm._s(item.rule)
-                          ),
+              return _vm.config.length > 0
+                ? _c("div", [
+                    item.valid
+                      ? _c(
+                          "div",
+                          {
+                            staticClass: "darkgreen",
+                            staticStyle: { color: "green" },
+                          },
+                          [
+                            _c("b", [
+                              _vm._v(
+                                "TEST " +
+                                  _vm._s(item.id) +
+                                  ": " +
+                                  _vm._s(item.rule)
+                              ),
+                            ]),
+                            _vm._v(" "),
+                            _c("br"),
+                            _c("br"),
+                            _c("img", { attrs: { src: _vm.rootPath } }),
+                            _vm._v(" "),
+                            _c("b", [_vm._v("SUCCESSFUL!")]),
+                          ]
+                        )
+                      : _c("div", { staticClass: "red" }, [
+                          _c("b", [
+                            _vm._v(
+                              "TEST " +
+                                _vm._s(item.id) +
+                                ": " +
+                                _vm._s(item.rule)
+                            ),
+                          ]),
+                          _vm._v(" "),
+                          _c("br"),
+                          _c("br"),
+                          _c("img", { attrs: { src: _vm.rootPath } }),
+                          _vm._v(" "),
+                          _c("b", [_vm._v("FAILURE!")]),
+                          _c("br"),
+                          _vm._v(" "),
+                          item.diff
+                            ? _c("div", [
+                                _c("p", [
+                                  _vm._v("Required: "),
+                                  _c("br"),
+                                  _c("pre", [_vm._v(_vm._s(item.rule))]),
+                                ]),
+                                _vm._v(" "),
+                                _c("p", [
+                                  _vm._v("Found difference: "),
+                                  _c("br"),
+                                  _c("pre", [_vm._v(_vm._s(item.diff))]),
+                                ]),
+                              ])
+                            : _vm._e(),
                         ]),
-                        _vm._v(" "),
-                        _c("br"),
-                        _c("br"),
-                        _c("img", { attrs: { src: _vm.rootPath } }),
-                        _vm._v(" "),
-                        _c("b", [_vm._v("SUCCESSFUL!")]),
-                      ]
-                    )
-                  : _c("div", { staticClass: "red" }, [
-                      _c("b", [
-                        _vm._v(
-                          "TEST " + _vm._s(item.id) + ": " + _vm._s(item.rule)
-                        ),
-                      ]),
-                      _vm._v(" "),
-                      _c("br"),
-                      _c("br"),
-                      _c("img", { attrs: { src: _vm.rootPath } }),
-                      _vm._v(" "),
-                      _c("b", [_vm._v("FAILURE!")]),
-                      _c("br"),
-                    ]),
-              ])
+                  ])
+                : _vm._e()
             }),
           ],
           2
