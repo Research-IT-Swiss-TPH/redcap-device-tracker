@@ -236,11 +236,22 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
          * */ 
         $config[] = array( "id" => "1-0", "valid" => $pid !== null, "rule" => "Device Project is defined.");
 
-        // abort further checking if project unset
-        if($pid !== null) {
+        // abort further checking if project unset or invalid
+        if($pid !== null ) {
 
             //  Get project object (does not populate repeating forms..)
             $project = new \Project($pid);
+
+            /**
+             * 1.0.1 Check if Device Project id is valid
+             * 
+             * 
+             */
+            $config[] = array( "id" => "1-0-1", "valid" => $this->getProjectStatus($pid) !== null, "rule" => "Device Project is valid.");
+
+            if($this->getProjectStatus($pid) === null){
+                return $config;
+            }
 
             /**
              * 1.1 Check if Device Project is longitudinal
