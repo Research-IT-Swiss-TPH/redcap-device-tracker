@@ -1034,8 +1034,10 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * @since 1.0.0
      */
     private function getCurrentTrackingId($pid, $field, $id) {
+        // Add support for multiple redcap_data tables
+        $data_table = method_exists('\REDCap', 'getDataTable') ? \REDCap::getDataTable($pid) : "redcap_data";
         $result = $this->query(
-                    "SELECT value FROM redcap_data WHERE project_id = ? AND field_name = ? AND record = ?", 
+                    "SELECT value FROM $data_table WHERE project_id = ? AND field_name = ? AND record = ?", 
                     [ $pid, $field, $id ]
                 );
         return $result->fetch_object()->value;
