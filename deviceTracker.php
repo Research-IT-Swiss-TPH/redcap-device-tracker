@@ -57,15 +57,36 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     // Base
     //-----------------------------------------------------
 
-    /**
-     * Construct the class
-     * 
-     * @since 1.0.0
-     */
-    public function __construct()
-    {
-        parent::__construct();
+    // /**
+    //  * Construct the class
+    //  * 
+    //  * @since 1.0.0
+    //  */
+    // public function __construct()
+    // {
+    //     parent::__construct();
 
+    //     //  Check if we are in testing context
+    //     $this->isTesting = ExternalModules::isTesting();
+
+    //     # Put this into try/catch so that in case of exception module can still be enabled/disabled
+    //     try {
+    //         //  Setup Project Context if pid is available through request and constant is not yet defined
+    //         if(isset($_GET["pid"]) && !defined('PROJECT_ID')) {
+    //             define('PROJECT_ID', $this->escape($_GET["pid"]));
+    //         }
+            
+    //         //  Set Device Project variables
+    //         $this->setDeviceProject();
+
+    //     } catch (\Exception $e) {
+    //         error_log("Error during module class construction. This exception has been caught to prevent module enable/disable problems.");
+    //         error_log($e);
+    //     }
+
+    // }
+
+    private function initModule() {
         //  Check if we are in testing context
         $this->isTesting = ExternalModules::isTesting();
 
@@ -82,8 +103,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         } catch (\Exception $e) {
             error_log("Error during module class construction. This exception has been caught to prevent module enable/disable problems.");
             error_log($e);
-        }
-
+        }        
     }
 
     /**
@@ -118,7 +138,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * @since 1.0.0
      */
     public function redcap_every_page_top($project_id = null) {
-
         if($this->isValidTrackingPage()) {
             if(!$this->isValidDevicesProject()) {
                 $this->renderAlertInvalidDevices();
@@ -140,6 +159,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     public function redcap_control_center() {
         if($this->isPage("ExternalModules/manager/control_center.php")) {
+            $this->initModule();
             $config = $this->getConfig();
             $invalids = array_filter($config, function($el){
                 return $el["valid"] == false;
@@ -147,7 +167,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $count = count($invalids);
 
             if($count > 0) {
-                $this->includeControlCenterJS($count);   
+                $this->includeControlCenterJS($count);
             }
          
         }
@@ -179,7 +199,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     private function isValidTrackingPage() {
         //  Check if valid Data Entry page
         if($this->isPage('DataEntry/index.php') && isset( $_GET['id']) && defined('USERID')) {
-
+            
+            $this->initModule();
             $all_tracking_fields = $this->getAllTrackingFields();
 
             //  Check if is a valid Form Page with Tracking field
@@ -515,6 +536,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * @since 1.0.0
      */
     public function getTrackingData($record_id, $field_id, $event_id){
+        $this->initModule();
 
         $response = [];
 
@@ -558,6 +580,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * @since 1.0.0
      */
     public function validateDevice(string $device_id, string $trackingField) {
+        $this->initModule();
 
         $types = $this->getDeviceTypesForField($trackingField);
         $availableDevices = $this->getAvailableDevices($types);
@@ -581,6 +604,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     public function getAdditionalFields($mode, $field) {
 
+        $this->initModule();
+
         $additionalFields = [];
 
         $tracking = $this->getTrackingForField($field);
@@ -602,6 +627,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * @since 1.0.0
      */
     public function handleTracking(Tracking $tracking) {
+
+        $this->initModule();
 
         //  Initialize variables
         $tracking_settings = [];       
@@ -821,6 +848,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * @since 1.0.0
      */
     public function provideLogs() {
+
+        $this->initModule();
 
         //  Initiate logs variable
         $logs = [];
@@ -1095,6 +1124,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * @since 1.0.0
      */
     public function getTrackingLogs($record, $field) {
+
+        $this->initModule();
 
         $sql = "select log_id, message, user, action, field, date where message = ? AND record = ? AND field = ?";
         $parameters = ['tracking-action', $record, $field];
