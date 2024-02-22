@@ -183,7 +183,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $saveSessionId = $tracking->validateSessionData($lastSessionId, $lastSessionState, $isLastSessionUntracked);
 
             //  Retrieve tracking ID
-            $currentTrackingId = $this->getCurrentTrackingId($tracking->project, $tracking->field, $tracking->owner);
+            $currentTrackingId = $this->getCurrentTrackingId($tracking->project, $tracking->field, $tracking->owner, $tracking->event);
 
             //  Validate tracking ID
             $tracking->validateTrackingId($currentTrackingId);
@@ -422,8 +422,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $project = new \Project($project_id);
             //  longitudinal project
             if($project->longitudinal === true && $event_id !== null) {
-                // $sql .= " AND event = ?";
-                // $parameters = ['tracking-action', $record, $field, $event_id];
+                $sql .= " AND event = ?";
+                $parameters = ['tracking-action', $record, $field, $event_id];
             }
 
             $result = $this->queryLogs($sql, $parameters);
@@ -948,12 +948,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * 
      * @since 1.0.0
      */
-    private function getCurrentTrackingId($pid, $field, $id) {
+    private function getCurrentTrackingId($pid, $field, $id, $event) {
         // Add support for multiple redcap_data tables
         $data_table = method_exists('\REDCap', 'getDataTable') ? \REDCap::getDataTable($pid) : "redcap_data";
         $result = $this->query(
-                    "SELECT value FROM $data_table WHERE project_id = ? AND field_name = ? AND record = ?", 
-                    [ $pid, $field, $id ]
+                    "SELECT value FROM $data_table WHERE project_id = ? AND field_name = ? AND record = ? AND event_id = ?", 
+                    [ $pid, $field, $id, $event]
                 );
         return $result->fetch_object()->value;
     }    

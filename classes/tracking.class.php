@@ -29,7 +29,13 @@ class Tracking {
             $this->device = $payload["device_id"];
             $this->user = $payload["user_id"];
 
-            $this->id       = hash('sha256', $this->owner . "." . $this->device . "." . $this->project);
+            if(empty($payload["tracking_id"])) {
+                $this->id = hash('sha256', $this->owner . "." . $this->device . "." . $this->project . "." . $this->event . "." . time());
+            } else {
+                $this->id = $payload["tracking_id"];
+            }
+            
+            
             $this->timestamp = date("Y-m-d H:i:s");
 
             $this->extra = [];
@@ -44,7 +50,7 @@ class Tracking {
     }
     
     public function validateSessionData($lastSessionId, $lastSessionState, $isLastSessionUntracked) {
-        //  Do checks and determine ID of session to bes saved (different for every action)
+
         if($this->action == 'assign') {
             if( ($lastSessionState != "") && ($lastSessionState != 0) ) {
                 throw new Exception ("Invalid current instance state. Expected 0, found: " . $lastSessionState);

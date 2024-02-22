@@ -736,6 +736,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             switch (_context2.prev = _context2.next) {
               case 0:
                 data = {
+                  tracking_id: _this2.tracking.session_tracking_id,
                   action: _this2.modalMode,
                   event_id: _this2.page.event_id,
                   owner_id: _this2.page.record_id,

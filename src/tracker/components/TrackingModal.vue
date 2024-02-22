@@ -177,7 +177,8 @@
 
         async handleTracking() {
 
-            const data = {                
+            const data = {
+                tracking_id: this.tracking.session_tracking_id,
                 action: this.modalMode,
                 event_id: this.page.event_id,
                 owner_id: this.page.record_id,
