@@ -57,53 +57,17 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     // Base
     //-----------------------------------------------------
 
-    // /**
-    //  * Construct the class
-    //  * 
-    //  * @since 1.0.0
-    //  */
-    // public function __construct()
-    // {
-    //     parent::__construct();
-
-    //     //  Check if we are in testing context
-    //     $this->isTesting = ExternalModules::isTesting();
-
-    //     # Put this into try/catch so that in case of exception module can still be enabled/disabled
-    //     try {
-    //         //  Setup Project Context if pid is available through request and constant is not yet defined
-    //         if(isset($_GET["pid"]) && !defined('PROJECT_ID')) {
-    //             define('PROJECT_ID', $this->escape($_GET["pid"]));
-    //         }
-            
-    //         //  Set Device Project variables
-    //         $this->setDeviceProject();
-
-    //     } catch (\Exception $e) {
-    //         error_log("Error during module class construction. This exception has been caught to prevent module enable/disable problems.");
-    //         error_log($e);
-    //     }
-
-    // }
-
     private function initModule() {
         //  Check if we are in testing context
         $this->isTesting = ExternalModules::isTesting();
 
-        # Put this into try/catch so that in case of exception module can still be enabled/disabled
-        try {
-            //  Setup Project Context if pid is available through request and constant is not yet defined
-            if(isset($_GET["pid"]) && !defined('PROJECT_ID')) {
-                define('PROJECT_ID', $this->escape($_GET["pid"]));
-            }
-            
-            //  Set Device Project variables
-            $this->setDeviceProject();
-
-        } catch (\Exception $e) {
-            error_log("Error during module class construction. This exception has been caught to prevent module enable/disable problems.");
-            error_log($e);
-        }        
+        //  Setup Project Context if pid is available through request and constant is not yet defined
+        if(isset($_GET["pid"]) && !defined('PROJECT_ID')) {
+            define('PROJECT_ID', $this->escape($_GET["pid"]));
+        }
+        
+        //  Set Device Project variables
+        $this->setDeviceProject();
     }
 
     /**
@@ -174,6 +138,431 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }
 
     /**
+     * Ajax 
+     * 
+     */
+    public function redcap_module_ajax($action, $payload, $project_id) {
+        $this->initModule();
+
+        switch ($action) {
+            case 'get-tracking-data':
+                $result = $this->ajax_getTrackingData($payload, $project_id);
+                break;
+            case 'get-additional-fields':
+                $result = $this->ajax_getAdditionalFields($payload, $project_id);
+                break;                
+            case 'get-tracking-logs':
+                $result = $this->ajax_getTrackingLogs($payload, $project_id);
+                break;
+            case 'validate-device':
+                $result = $this->ajax_validateDevice($payload);
+                break;
+            case 'handle-tracking':
+                $result = $this->ajax_handleTracking($payload);
+                break;                
+            default:
+                // Action not defined
+                throw new Exception ("Action $action is not defined");
+        }
+        return $result;
+    }
+
+    private function ajax_handleTracking($payload){
+        
+        if(empty($payload["device_id"])) {
+            throw new Exception("'device_id' must be set!");
+        }
+        if(empty($payload["field_id"])) {
+            throw new Exception("'field_id' must be set!");
+        }
+        if(empty($payload["owner_id"])) {
+            throw new Exception("'owner_id' must be set!");
+        }
+        if(empty($payload["mode"])) {
+            throw new Exception("'mode' must be set!");
+        }
+        if( !in_array( $payload["mode"], array('assign', 'return', 'reset'))){
+            throw new Exception("Invalid tracking action!");
+        }
+
+        $tracking = new Tracking($payload);
+
+        //  Initialize variables
+        $tracking_settings = [];       
+        $dataValues_t = [];
+
+        try {
+            //  Begin database transaction
+            $this->beginDbTx();
+
+            //  Retrieve current device instance info (assuming that current instance is last instance)
+            //  list($currentInstanceId, $currentInstanceState) = $this->getCurrentDeviceInfo($tracking->device);
+            list($lastSessionId, $lastSessionState, $isLastSessionUntracked) = $this->getSessionData($tracking->device);
+            //  Do checks and determine ID of session to bes saved (different for every action)
+            if($tracking->mode == 'assign') {
+                if( ($lastSessionState != "") && ($lastSessionState != 0) ) {
+                    throw new Exception ("Invalid current instance state. Expected 0, found: " . $lastSessionState);
+                }
+
+                if( ($lastSessionState != "") && $isLastSessionUntracked) {
+                    $saveSessionId = $lastSessionId;
+                } else {
+                    $saveSessionId = $lastSessionId + 1;
+                }
+            }
+
+            if($tracking->mode == 'return') {
+                if( $lastSessionState != 1) {
+                    throw new Exception ("Invalid current instance state. Expected 1, found: " . $lastSessionState);
+                }
+                $saveSessionId = $lastSessionId;
+            }
+
+            if($tracking->mode == 'reset') {
+                if( $lastSessionState != 2) {
+                    throw new Exception ("Invalid current instance state. Expected 2, found: " . $lastSessionState);
+                }
+                $saveSessionId = $lastSessionId;
+            }
+
+            //  Retrieve tracking ID
+            $currentTrackingId = $this->getCurrentTrackingId($tracking->project, $tracking->field, $tracking->owner);
+
+            //  Do checks (different for every action)
+            if($tracking->mode == 'assign') {
+                if(!empty($currentTrackingId)) {
+                    throw new Exception("Invalid current tracking field. Expected NULL found: " . $currentTrackingId);
+                }
+            } else {
+                if($currentTrackingId != $tracking->id) {
+                    throw new Exception("Invalid current tracking field. Expected ".$tracking->id." found: " . $currentTrackingId);
+                } 
+            }
+
+            /**
+             * 1. Save data to devices project
+             * 
+             */
+
+            //  Prepare parameters for actual saving
+            $params_d = [
+                'project_id' => $this->devices_project_id,
+                'data' => $tracking->getDataDevices($saveSessionId, $this->devices_event_id)
+            ];
+            //  Perform actual saving
+            $saved_d = REDCap::saveData($params_d);
+
+            //  Throw error if there were errors during save
+            if(is_array($saved_d["errors"]) && count($saved_d["errors"]) !== 0) {
+                throw new Exception(implode(", ", $saved_d["errors"]));
+            } elseif(!empty($saved_d["errors"])) {
+                throw new Exception($saved_d["errors"]);
+            }
+
+            /**
+             * 2. Save data to tracking project
+             * 
+             */
+
+
+            //  Get tracking settings
+
+            foreach ($this->getSubSettings('trackings') as $key => $settings) {
+                if($settings["tracking-field"] == $tracking->field) {
+                    $tracking_settings =  $settings;
+                    break;
+                }
+            }
+
+
+            //  Save tracking id into tracking project
+            if($tracking->mode == 'assign') {
+                $dataValues_t[$tracking->field] = $tracking->id;                
+            }            
+
+            //  To Do: Validate
+            //  Validate extra fields with tracking field instructions
+            //  Validate extra fields with actual fields in form
+            //  Check if action has extras
+            $hasExtra = !empty($tracking->extra) && $this->checkHasExtra($tracking_settings, $tracking->mode);
+            if($hasExtra) {
+                //  Add extra fields to data to be saved
+                foreach ($tracking->extra as $key => $value) {
+                    //  push values to fields and add to $dataValues_t
+                    $dataValues_t[$key] = $value;
+                }                
+            }
+
+            //  Check if sync is enabled
+            $hasSync = $this->checkHasSync($tracking_settings);
+
+            //  to do: process this through tracking class method (need module instance inside tracking class)
+            //  optional: add warnings when setting is empty
+            if($hasSync) {
+
+                $sync_data = [];
+
+                if($tracking->mode == 'assign' && !empty($tracking_settings["sync-date-assign"])) {
+                    $sync_data[$tracking_settings["sync-date-assign"]] = $tracking->timestamp;
+                }
+                
+                if($tracking->mode == 'return' && !empty($tracking_settings["sync-date-return"]) ) {
+                    $sync_data[$tracking_settings["sync-date-return"]] = $tracking->timestamp;
+                }
+
+                if($tracking->mode == 'reset' && !empty($tracking_settings["sync-date-reset"]) ) {
+                    $sync_data[$tracking_settings["sync-date-reset"]] = $tracking->timestamp;
+                }                
+
+                if( !empty($tracking_settings["sync-state"])) {
+                    $sync_data[$tracking_settings["sync-state"]] = $tracking->getDeviceStateByMode();
+                }
+                
+                //  Add sync fields to data to be saved
+                foreach ($sync_data as $key => $value) {
+                    //  push values to fields and add to $dataValues_t
+                    $dataValues_t[$key] = $value;
+                }
+            }       
+
+            //  Perform actual save only if we have data for the specific action to be saved or sync in enabled
+            //  to do
+            if($tracking->mode == 'assign' || $hasSync || $hasExtra) {
+                $data_t = [ $tracking->owner => [$tracking->event => $dataValues_t ] ];
+                
+                $params_t = [
+                    'project_id' => $tracking->project,
+                    'data' => $data_t
+                ];
+                $saved_t = REDCap::saveData($params_t);
+
+                //  Check if there were any errors during save and throw error
+                if(is_array($saved_t["errors"]) && count($saved_t["errors"]) !== 0) {
+                    throw new Exception(implode(", ", $saved_t["errors"]));
+                } elseif(!empty($saved_t["errors"])) {
+                    throw new Exception($saved_t["errors"]);
+                }
+            }
+
+            //  Write to log
+            $logId = $this->log(
+                "tracking-action",
+                [
+                    "action"=> $tracking->mode,
+                    "field" => $tracking->field,
+                    "value" => $tracking->device,
+                    "record" => $tracking->owner,
+                    "session" => $lastSessionId,
+                    "user" => $tracking->user,
+                    "date" => $tracking->timestamp,
+                    "valid" =>  true,
+                    "extra" => json_encode($tracking->extra),
+                    "timestamp" => $tracking->timestamp
+                ]
+            );
+
+            //  End database transaction
+            $this->endDbTx();
+
+        } catch (\Throwable $th) {
+
+            //  Rollback database
+            $this->rollbackDbTx();
+            
+            //  Handle Error
+            //  Save to logs
+            $this->log("tracking-error", [
+                "error" => $th->getMessage(),
+                "action"=> $tracking->mode,
+                "field"=> $tracking->field,
+                "value"=> $tracking->device,
+                "record" => $tracking->owner,
+                "user" => $tracking->user,
+            ]);
+
+            //  Send to Frontend
+            //$this->sendError(500, $th, $tracking_settings);
+            throw new Exception("Error");
+        }
+
+        $response = array(
+            "tracking" => $tracking,
+            "devices_project" => $this->devices_project_id,
+            "saved_devices" => $saved_d,
+            "saved_tracking" => $saved_t ?? [],
+            "log_id" => $logId,
+            "extra" => array("hasExtra" => $hasExtra, "data" => $tracking->extra, "use"=>(bool) $tracking_settings["use-additional-assign"]),
+            "sync" => $sync_data ?? [],
+            "settings" => $tracking_settings
+        );
+
+        return $response;
+    }
+
+    private function ajax_validateDevice($payload){
+        $trackingField = $payload["tracking_field"];
+        $device_id = $payload["device_id"];
+
+        if(empty($trackingField)) {
+            throw new Exception("tracking field must be set!");
+        }
+
+        if(empty($device_id)) {
+            throw new Exception("device id must be set!");
+        }
+
+        $types = $this->getDeviceTypesForField($trackingField);
+        $availableDevices = $this->getAvailableDevices($types);
+
+        $device = $availableDevices[$device_id];
+        if(isset($device)) {
+            return array("device_id" => $device_id);
+        } else {
+           return false;
+        }
+    }
+
+    private function ajax_getTrackingData($payload, $project_id){
+        
+        $response = [];
+
+        $record = $payload["record"];
+        $field = $payload["field"];
+        $event_id = $payload["event_id"];
+
+        if(empty($record)) {
+            throw new Exception("Record must be set!");
+        }
+
+        if(empty($field)) {
+            throw new Exception("Field must be set!");
+        }
+
+        if(empty($event_id)) {
+            throw new Exception("Event must be set!");
+        }
+
+        $params = [
+            'project_id'    => $project_id,
+            'records' => $record,
+            'fields' => $field,
+            'events' => $event_id,
+            'return_format' => 'json'
+        ];
+
+        $data_t = json_decode( REDCap::getData($params), true);
+
+        //  Ensure this check is secure for multiple and single events! (Also cover the case when event has data inside other instrument)
+        if(empty($data_t[0][$field])) {
+            return $response;
+        }
+
+        $session_tracking_id =  reset($data_t)[$field];
+       
+        $filterLogic = "[session_tracking_id] = '" . $session_tracking_id . "'";
+
+        $params = array(
+            'return_format' => 'json', 
+            'project_id' => $this->devices_project_id,
+            'exportAsLabels' => true,
+            'filterLogic' => $filterLogic,
+            'fields' => []
+        );
+
+        $json = REDCap::getData($params);
+        $response = reset(json_decode($json));
+
+        return $response;
+
+    }
+
+    private function ajax_getAdditionalFields($payload, $project_id){
+
+        $field = $payload["field"];
+        $mode = $payload["mode"];
+
+        if(empty($field)) {
+            throw new Exception("Field must be set!");
+        }
+        
+        if(empty($mode)) {
+            throw new Exception("Mode must be set!");
+        }
+
+        $additionalFields = [];
+
+        $tracking = $this->getTrackingForField($field);
+        
+        if($tracking["use-additional-" . $mode]) {
+            foreach ($tracking["additional-fields-" . $mode] as $key => $additionalField) {
+                $additionalFields[] = $this->getFieldMetaData($additionalField["add-field-" . $mode]);
+            }
+        }
+        return $additionalFields;
+    }
+
+    /**
+     * Get Tracking Logs for Tracker and Monitor App
+     * 
+     */
+    private function ajax_getTrackingLogs($payload, $project_id) {        
+       
+        $logs = [];
+
+        $record = $payload["record"];
+        $field = $payload["field"];
+        $event_id = $payload["event_id"];
+
+        //  system/project context
+        if($record === null) {
+
+            $sql = "select log_id, message, project_id, date, user, action, field, value, record, instance, error";
+            $parameters = [];
+
+            //  project context
+            if($project_id !== null) {
+                $sql = "select log_id, message, date, user, action, field, value, record, instance, error WHERE project_id = ?";
+                $parameters = [$project_id];                
+            }
+            $result = $this->queryLogs($sql, $parameters);
+            while($row = $result->fetch_assoc()){
+                $logs[] = $this->escape($row);
+            }
+            $result->close();
+            
+        } else {
+
+            if($field === null) {
+                throw new Exception("Field must be set.");
+            }
+            //  record context
+            $sql = "select log_id, message, user, action, field, date where message = ? AND record = ? AND field = ?";
+            $parameters = ['tracking-action', $record, $field];
+           
+            $project = new \Project($project_id);
+            //  longitudinal project
+            if($project->longitudinal === true && $event_id !== null) {
+                // $sql .= " AND event = ?";
+                // $parameters = ['tracking-action', $record, $field, $event_id];
+            }
+
+            $result = $this->queryLogs($sql, $parameters);
+            while($row = $result->fetch_object()){
+                $entry = [
+                    "action" => $this->escape($row->action),
+                    "date" =>  $this->escape($row->date),
+                    "user"=>  $this->escape($row->user)
+                ];
+                $logs[] = $entry;
+            }            
+        }
+    
+        return $logs;
+
+    }
+
+
+    /**
      * Include Javascript to embed module configuration error messages and link to module config check page
      * 
      */
@@ -220,9 +609,9 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     
     }
 
-    public function isProjectPage() {
-        return false;
-    }
+    // public function isProjectPage() {
+    //     return false;
+    // }
 
     /**
      * Check if module configuration is correct
@@ -400,6 +789,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     private function renderTrackingInterface() {
 
+        $this->initializeJavascriptModuleObject();
+
         $tracking_fields = $this->tracking_fields;
 
         //  Loop through all tracking fields for each form and insert for each a wrapper into DOM,
@@ -436,6 +827,10 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             const stph_dt_getDataFromBackend = function () {
                 return <?= $this->getDataFromBackend() ?>
             }
+            const stph_dt_getModuleFromBackend = function() {
+                return <?=$this->getJavascriptModuleObjectName()?>;
+            }
+            
         </script>
         <!-- actual vue scripts -->
         <script src="<?= $this->getUrl('./dist/appTracker.js') ?>"></script>
@@ -520,359 +915,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         $data["fields"] = $this->tracking_fields;
 
         return json_encode($data);
-
-    }
-
-
-    //-----------------------------------------------------
-    // Request Handler Calls (public)
-    //-----------------------------------------------------
-
-
-    /**
-     * Get Tracking Data from session_tracking_id
-     * 
-     * 
-     * @since 1.0.0
-     */
-    public function getTrackingData($record_id, $field_id, $event_id){
-        $this->initModule();
-
-        $response = [];
-
-        $params = [
-            'project_id'    => PROJECT_ID, 
-            'records' => $record_id,
-            'fields' => $field_id,
-            'events' => $event_id,
-            'return_format' => 'json'
-        ];
-
-        $data_t = json_decode( REDCap::getData($params), true);
-
-        //  Ensure this check is secure for multiple and single events! (Also cover the case when event has data inside other instrument)
-        if(empty($data_t[0][$field_id])) {
-            $this->sendResponse($response);
-        }
-
-        $session_tracking_id =  reset($data_t)[$field_id];
-       
-        $filterLogic = "[session_tracking_id] = '" . $session_tracking_id . "'";
-
-        $params = array(
-            'return_format' => 'json', 
-            'project_id' => $this->devices_project_id,
-            'exportAsLabels' => true,
-            'filterLogic' => $filterLogic,
-            'fields' => []            
-        );
-
-        $json = REDCap::getData($params);
-        $response = reset(json_decode($json));
-
-        $this->sendResponse($response); 
-    }       
-
-    /**
-     * Validate device by device_id and tracking_field
-     * 
-     * 
-     * @since 1.0.0
-     */
-    public function validateDevice(string $device_id, string $trackingField) {
-        $this->initModule();
-
-        $types = $this->getDeviceTypesForField($trackingField);
-        $availableDevices = $this->getAvailableDevices($types);
-
-        $device = $availableDevices[$device_id];
-        if(isset($device)) {
-            $this->sendResponse(
-                array("device_id" => $device_id)
-            );
-        } else {
-            $this->sendError(404);
-        }
-
-    }
-    
-
-    /**
-     * Get Additional Fields for different actions
-     * 
-     * @since 1.0.0
-     */
-    public function getAdditionalFields($mode, $field) {
-
-        $this->initModule();
-
-        $additionalFields = [];
-
-        $tracking = $this->getTrackingForField($field);
-        
-        if($tracking["use-additional-" . $mode]) {
-            foreach ($tracking["additional-fields-" . $mode] as $key => $additionalField) {
-                $additionalFields[] = $this->getFieldMetaData($additionalField["add-field-" . $mode]);
-            }
-        }
-
-        $this->sendResponse($additionalFields);
-
-    }
-
-    /**
-     * Handle Tracking Action
-     * 
-     * 
-     * @since 1.0.0
-     */
-    public function handleTracking(Tracking $tracking) {
-
-        $this->initModule();
-
-        //  Initialize variables
-        $tracking_settings = [];       
-        $dataValues_t = [];
-
-        try {
-            //  Begin database transaction
-            $this->beginDbTx();
-
-            //  Retrieve current device instance info (assuming that current instance is last instance)
-            //  list($currentInstanceId, $currentInstanceState) = $this->getCurrentDeviceInfo($tracking->device);
-            list($lastSessionId, $lastSessionState, $isLastSessionUntracked) = $this->getSessionData($tracking->device);
-            //  Do checks and determine ID of session to bes saved (different for every action)
-            if($tracking->mode == 'assign') {
-                if( ($lastSessionState != "") && ($lastSessionState != 0) ) {
-                    throw new Exception ("Invalid current instance state. Expected 0, found: " . $lastSessionState);
-                }
-
-                if( ($lastSessionState != "") && $isLastSessionUntracked) {
-                    $saveSessionId = $lastSessionId;
-                } else {
-                    $saveSessionId = $lastSessionId + 1;
-                }
-            }
-
-            if($tracking->mode == 'return') {
-                if( $lastSessionState != 1) {
-                    throw new Exception ("Invalid current instance state. Expected 1, found: " . $lastSessionState);
-                }
-                $saveSessionId = $lastSessionId;
-            }
-
-            if($tracking->mode == 'reset') {
-                if( $lastSessionState != 2) {
-                    throw new Exception ("Invalid current instance state. Expected 2, found: " . $lastSessionState);
-                }
-                $saveSessionId = $lastSessionId;
-            }
-
-            //  Retrieve tracking ID
-            $currentTrackingId = $this->getCurrentTrackingId($tracking->project, $tracking->field, $tracking->owner);
-
-            //  Do checks (different for every action)
-            if($tracking->mode == 'assign') {
-                if(!empty($currentTrackingId)) {
-                    throw new Exception("Invalid current tracking field. Expected NULL found: " . $currentTrackingId);
-                }
-            } else {
-                if($currentTrackingId != $tracking->id) {
-                    throw new Exception("Invalid current tracking field. Expected ".$tracking->id." found: " . $currentTrackingId);
-                } 
-            }
-
-            /**
-             * 1. Save data to devices project
-             * 
-             */
-
-            //  Prepare parameters for actual saving
-            $params_d = [
-                'project_id' => $this->devices_project_id,
-                'data' => $tracking->getDataDevices($saveSessionId, $this->devices_event_id)
-            ];
-            //  Perform actual saving
-            $saved_d = REDCap::saveData($params_d);
-
-            //  Throw error if there were errors during save
-            if(is_array($saved_d["errors"]) && count($saved_d["errors"]) !== 0) {
-                throw new Exception(implode(", ", $saved_d["errors"]));
-            } elseif(!empty($saved_d["errors"])) {
-                throw new Exception($saved_d["errors"]);
-            }
-
-            /**
-             * 2. Save data to tracking project
-             * 
-             */
-
-
-            //  Get tracking settings
-
-            foreach ($this->getSubSettings('trackings') as $key => $settings) {
-                if($settings["tracking-field"] == $tracking->field) {
-                    $tracking_settings =  $settings;
-                    break;
-                }
-            }
-
-
-            //  Save tracking id into tracking project
-            if($tracking->mode == 'assign') {
-                $dataValues_t[$tracking->field] = $tracking->id;                
-            }            
-
-            //  To Do: Validate
-            //  Validate extra fields with tracking field instructions
-            //  Validate extra fields with actual fields in form
-            //  Check if action has extras
-            $hasExtra = !empty($tracking->extra) && $this->checkHasExtra($tracking_settings, $tracking->mode);
-            if($hasExtra) {
-                //  Add extra fields to data to be saved
-                foreach ($tracking->extra as $key => $value) {
-                    //  push values to fields and add to $dataValues_t
-                    $dataValues_t[$key] = $value;
-                }                
-            }
-
-            //  Check if sync is enabled
-            $hasSync = $this->checkHasSync($tracking_settings);
-
-            //  to do: process this through tracking class method (need module instance inside tracking class)
-            //  optional: add warnings when setting is empty
-            if($hasSync) {
-
-                $sync_data = [];
-
-                if($tracking->mode == 'assign' && !empty($tracking_settings["sync-date-assign"])) {
-                    $sync_data[$tracking_settings["sync-date-assign"]] = $tracking->timestamp;
-                }
-                
-                if($tracking->mode == 'return' && !empty($tracking_settings["sync-date-return"]) ) {
-                    $sync_data[$tracking_settings["sync-date-return"]] = $tracking->timestamp;
-                }
-
-                if($tracking->mode == 'reset' && !empty($tracking_settings["sync-date-reset"]) ) {
-                    $sync_data[$tracking_settings["sync-date-reset"]] = $tracking->timestamp;
-                }                
-
-                if( !empty($tracking_settings["sync-state"])) {
-                    $sync_data[$tracking_settings["sync-state"]] = $tracking->getDeviceStateByMode();
-                }
-                
-                //  Add sync fields to data to be saved
-                foreach ($sync_data as $key => $value) {
-                    //  push values to fields and add to $dataValues_t
-                    $dataValues_t[$key] = $value;
-                }
-            }       
-
-            //  Perform actual save only if we have data for the specific action to be saved or sync in enabled
-            //  to do
-            if($tracking->mode == 'assign' || $hasSync || $hasExtra) {
-                $data_t = [ $tracking->owner => [$tracking->event => $dataValues_t ] ];
-                
-                $params_t = [
-                    'project_id' => $tracking->project,
-                    'data' => $data_t
-                ];
-                $saved_t = REDCap::saveData($params_t);
-
-                //  Check if there were any errors during save and throw error
-                if(is_array($saved_t["errors"]) && count($saved_t["errors"]) !== 0) {
-                    throw new Exception(implode(", ", $saved_t["errors"]));
-                } elseif(!empty($saved_t["errors"])) {
-                    throw new Exception($saved_t["errors"]);
-                }
-            }
-
-            //  Write to log
-            $logId = $this->log(
-                "tracking-action",
-                [
-                    "action"=> $tracking->mode,
-                    "field"=> $tracking->field,
-                    "value"=> $tracking->device,
-                    "record" => $tracking->owner,
-                    "session" => $lastSessionId,
-                    "user" => $tracking->user,
-                    "date"  => $tracking->timestamp,
-                    "valid" =>  true,
-                    "extra" => json_encode($tracking->extra),
-                    "timestamp" => $tracking->timestamp
-                ]
-            );
-
-            //  End database transaction
-            $this->endDbTx();
-
-        } catch (\Throwable $th) {
-
-            //  Rollback database
-            $this->rollbackDbTx();
-            
-            //  Handle Error
-            //  Save to logs
-            $this->log("tracking-error", [
-                "error" => $th->getMessage(),
-                "action"=> $tracking->mode,
-                "field"=> $tracking->field,
-                "value"=> $tracking->device,
-                "record" => $tracking->owner,
-                "user" => $tracking->user,
-            ]);
-
-            //  Send to Frontend
-            $this->sendError(500, $th, $tracking_settings);
-        }
-
-        $response = array(
-            "tracking" => $tracking,
-            "devices_project" => $this->devices_project_id,
-            "saved_devices" => $saved_d,
-            "saved_tracking" => $saved_t ?? [],
-            "log_id" => $logId,
-            "extra" => array("hasExtra" => $hasExtra, "data" => $tracking->extra, "use"=>(bool) $tracking_settings["use-additional-assign"]),
-            "sync" => $sync_data ?? [],
-            "settings" => $tracking_settings
-        );
-
-        $this->sendResponse($response);         
-    }
-
-    /**
-     * Provide logs for monitoring
-     * Limits to project context
-     * 
-     * @since 1.0.0
-     */
-    public function provideLogs() {
-
-        $this->initModule();
-
-        //  Initiate logs variable
-        $logs = [];
-
-        //  Default Query
-        $sql = "select log_id, message, project_id, message, date,  user, action, field, value, record, instance, error";
-        $parameters = [];
-
-        //  Project Page specific query (limit output to current pid only)
-        if(defined('PROJECT_ID')) {
-            $sql .= " WHERE project_id = ?";
-            $parameters = [PROJECT_ID];
-        }
-
-        //  Run query
-        $result = $this->queryLogs($sql, $parameters);
-        while($row = $result->fetch_assoc()){
-            $logs[] = $this->escape($row);
-        }
-        $result->close();
-
-        //  Return response
-        $this->sendResponse($logs);
 
     }
 
@@ -1117,33 +1159,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         
     }
 
-
-    /**
-     * Get Logs for a tracking/field pair
-     * 
-     * @since 1.0.0
-     */
-    public function getTrackingLogs($record, $field) {
-
-        $this->initModule();
-
-        $sql = "select log_id, message, user, action, field, date where message = ? AND record = ? AND field = ?";
-        $parameters = ['tracking-action', $record, $field];
-
-        $result = $this->queryLogs($sql, $parameters);
-        $logs = [];
-        while($row = $result->fetch_object()){
-            $entry = [
-                "action" => $row->action,
-                "date" => $row->date,
-                "user"=> $row->user
-            ];
-            $logs[] = $entry;
-        }
-
-        $this->sendResponse($logs);
-
-    }
 
 
    /**  

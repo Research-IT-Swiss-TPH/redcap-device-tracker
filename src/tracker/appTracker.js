@@ -7,6 +7,9 @@ Vue.config.productionTip = false
 var backend = stph_dt_getDataFromBackend();
 console.log(backend);
 
+var stph_dt_module = stph_dt_getModuleFromBackend();
+//console.log(stph_dt_module);
+
 //  Axios  
 import axios from 'axios'
 import VueAxios from 'vue-axios'
@@ -23,6 +26,9 @@ Vue.use(BootstrapVue)
 import VueClipboard from 'vue-clipboard2'
 Vue.use(VueClipboard)
 
+//  Add REDCap JavaScript Module Object all Vue instances globally
+Vue.prototype.$module = stph_dt_module
+
 backend.fields.forEach(function(field, idx){
   new Vue({
     render: h => h(App, {
@@ -32,4 +38,5 @@ backend.fields.forEach(function(field, idx){
       }
     }),
   }).$mount("#STPH_DT_FIELD_"+field)
+  
 })

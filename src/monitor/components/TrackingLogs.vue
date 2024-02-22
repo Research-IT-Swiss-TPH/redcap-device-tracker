@@ -50,16 +50,12 @@
         },
         
         methods: {
-            async logProvider() {
+            async getTrackingLogs() {
                     this.isBusy = true
-                    this.axios({
-                        params: {
-                            action: 'provide-logs'
-                        }
-                    })
+                    this.$module
+                    .ajax('get-tracking-logs')
                     .then( response => {
-                        this.items  = response.data
-                        //console.log(response.data)
+                        this.items  = response
                     })
                     .catch(e => {
                         console.log(e.message)
@@ -70,12 +66,12 @@
             }
         },
         computed: {
-        rows() {
-            return this.items.length
-        }
+            rows() {
+                return this.items.length
+            }
         },
         mounted() {
-            this.logProvider()
+            this.getTrackingLogs()
         }
     }
 

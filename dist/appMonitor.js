@@ -175,7 +175,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     };
   },
   methods: {
-    logProvider: function logProvider() {
+    getTrackingLogs: function getTrackingLogs() {
       var _this = this;
       return _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
         return _regeneratorRuntime().wrap(function _callee$(_context) {
@@ -183,13 +183,8 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
             switch (_context.prev = _context.next) {
               case 0:
                 _this.isBusy = true;
-                _this.axios({
-                  params: {
-                    action: 'provide-logs'
-                  }
-                }).then(function (response) {
-                  _this.items = response.data;
-                  //console.log(response.data)
+                _this.$module.ajax('get-tracking-logs').then(function (response) {
+                  _this.items = response;
                 })["catch"](function (e) {
                   console.log(e.message);
                 })["finally"](function () {
@@ -210,7 +205,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     }
   },
   mounted: function mounted() {
-    this.logProvider();
+    this.getTrackingLogs();
   }
 });
 
@@ -66573,6 +66568,7 @@ __webpack_require__.r(__webpack_exports__);
 
 //  Constants set via Backend
 var baseURL = stph_dt_getBaseUrlFromBackend();
+var stph_dt_module = stph_dt_getModuleFromBackend();
 
 //  Axios  
 
@@ -66585,6 +66581,9 @@ vue__WEBPACK_IMPORTED_MODULE_2__["default"].use(vue_axios__WEBPACK_IMPORTED_MODU
 
 
 vue__WEBPACK_IMPORTED_MODULE_2__["default"].use(bootstrap_vue__WEBPACK_IMPORTED_MODULE_5__.BootstrapVue);
+
+//  Add REDCap JavaScript Module Object all Vue instances globally
+vue__WEBPACK_IMPORTED_MODULE_2__["default"].prototype.$module = stph_dt_module;
 
 //  Create Vue Instance and mount our module page container
 new vue__WEBPACK_IMPORTED_MODULE_2__["default"]({

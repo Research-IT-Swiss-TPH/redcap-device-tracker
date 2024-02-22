@@ -65,17 +65,18 @@
         :rows="logRows" 
         :tracking="tracking"
         :field="field"
-        :record="page.record_id" 
+        :record="page.record_id"
+        :event_id="page.event_id"
       />
 
     </div>
   </template>
   
   <script>
-  import TrackingHeader from './components/TrackingHeader.vue'
-  import TrackingState from './components/TrackingState.vue'
-  import TrackingLog from './components/TrackingLog.vue'
-  import TrackingModal from './components/TrackingModal.vue'
+  import TrackingHeader from './components/TrackingHeader'
+  import TrackingState from './components/TrackingState'
+  import TrackingLog from './components/TrackingLog'
+  import TrackingModal from './components/TrackingModal'
 
   export default {
     name: 'App',
@@ -93,34 +94,34 @@
     },
     props: {
         page: Object,
-        field: String
+        field: String,
+        module: Object
     },
     methods: {
 
       async getTrackingData() {
+        
+        const data = {
+          record: this.page.record_id, 
+          field: this.field, 
+          event_id: this.page.event_id
+        }
 
-        this.axios({
-                    params: {
-                        action: 'get-tracking-data',
-                        record_id: this.page.record_id,
-                        field_id: this.field,
-                        event_id: this.page.event_id
-                    }
-                })
-                .then( response => {
-                  console.log(response.data)
-                  if(response.data.session_tracking_id !== undefined) {
-                    this.tracking = response.data
-                  } else {
-                    console.log("No tracking.")
-                  }
-                })
-                .catch(e => {
-                    console.log(e.message)
-                })
-                .finally( () => {
-                  this.isLoading = false
-                })        
+        this.$module
+          .ajax('get-tracking-data', data)
+          .then( response => {                 
+            if(response.session_tracking_id !== undefined) {
+              this.tracking = response
+            } else {
+              console.log("No tracking.")
+            }
+          })
+          .catch(e => {
+              console.log(e.message)
+          })
+          .finally( () => {
+            this.isLoading = false
+          })        
       },
 
       onCopy: function (e) {

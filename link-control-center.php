@@ -12,13 +12,17 @@ namespace STPH\deviceTracker;
         This page gives you an overview of your Device Tracker Configuration status and also access to system-wide tracking logs.
     </p>
 <?php    
-    //dump(new \Project(15));
-    //dump("Ok");
+
+    $module->initializeJavascriptModuleObject();
 ?>
     
 <div id="STPH_DT_MONITOR"></div>
 
 <script type='text/javascript'>
+
+    const stph_dt_getModuleFromBackend = function() {
+        return <?=$module->getJavascriptModuleObjectName()?>;
+    }
 
     const stph_dt_getBaseUrlFromBackend = function () {
         return '<?= $module->getUrl("requestHandler.php") ?>'

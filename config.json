@@ -19,6 +19,14 @@
 
     "framework-version": 14,
 
+    "auth-ajax-actions": [
+        "get-tracking-data",
+        "get-additional-fields",
+        "get-tracking-logs",
+        "validate-device",
+        "handle-tracking"
+    ],
+
     "system-settings": [
         {
             "key": "devices-project",

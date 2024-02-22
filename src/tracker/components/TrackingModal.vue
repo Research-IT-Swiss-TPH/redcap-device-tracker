@@ -85,7 +85,7 @@
                 <b-button v-if="!isActionInit&&!hasActionError" class="btn-primaryrc" @click="complete()">
                     Complete 
                 </b-button>
-                <b-button v-if="isActionInit" style="text-transform: capitalize;" :disabled="modalMode == 'assign'&&!isValidDevice"  class="btn-primaryrc" @click="processAction()">
+                <b-button v-if="isActionInit" style="text-transform: capitalize;" :disabled="modalMode == 'assign'&&!isValidDevice"  class="btn-primaryrc" @click="handleTracking()">
                     <span v-if="!isProcessing">{{ modalMode }} Device</span>
                     <b-spinner small v-else></b-spinner>
                 </b-button>                                
@@ -94,9 +94,8 @@
   </template>
   
   <script>
-  import { onErrorCaptured } from 'vue'
-import SweetAlert from './SweetAlert.vue'
-  import TrackingAddFields from './TrackingAddFields.vue'
+  import SweetAlert from './SweetAlert'
+  import TrackingAddFields from './TrackingAddFields'
 
   export default {
     name: 'TrackingModal',
@@ -168,68 +167,72 @@ import SweetAlert from './SweetAlert.vue'
             } else {
                 this.isValidDevice = null
                 this.isValidating = true
-                //  trim blank spaces for usability noobs
+
                 this.userInput = this.userInput.trim()
-                this.axios({
-                    params: {
-                        action: 'validate-device',
-                        device_id: this.userInput,
-                        tracking_field: this.field
-                    }
-                })
-                .then( response => {
-                    //this.device_id = response.data.device_id;
-                    document.activeElement.blur();
-                    this.isValidDevice = true
-                })
-                .catch(e => {
-                    this.isValidDevice = false
-                    console.log(e.message)
-                })
-                .finally( () => {
-                    this.isValidating = false
-                })
+                
+                const data = {
+                    device_id: this.userInput,
+                    tracking_field: this.field
+                }
+
+                this.$module
+                .ajax('validate-device', data)                            
+                    .then( response => {         
+                        if(response) {
+                            document.activeElement.blur();
+                            this.isValidDevice = true
+                        } else {
+                            this.isValidDevice = false
+                        }
+                    })
+                    .catch(e => {
+                        this.isValidDevice = false
+                        console.log(e.message)
+                    })
+                    .finally( () => {
+                        this.isValidating = false
+                    })
             }
             
         },
 
-        async processAction() {
-            this.isProcessing = true
-            this.axios({
-                params: {        
-                        action: 'handle-tracking',           
-                        mode: this.modalMode,
-                        event_id: this.page.event_id,
-                        owner_id: this.page.record_id,
-                        field_id: this.field,
-                        device_id: this.deviceId,
-                        user_id: this.page.user_id,
-                        extra: JSON.stringify(this.extra)
-                    }
-                })
-                .then(() => {
+        async handleTracking() {
+
+            const data = {                
+                mode: this.modalMode,
+                event_id: this.page.event_id,
+                owner_id: this.page.record_id,
+                field_id: this.field,
+                device_id: this.deviceId,
+                user_id: this.page.user_id,
+                extra: JSON.stringify(this.extra)
+            }
+            
+            this.$module
+            .ajax('handle-tracking', data)
+                .then(response => {
+                    console.log(response)
                     this.setProcessSuccess()
                 })
                 .catch(error => {
+                    console.log(error)
                     this.handleAxiosError(error)
                 })
                 .finally(()=>{
                     this.isProcessing = false
                 })
         },
+        async getAdditionalFields() {
 
-        async loadAdditionalFields() {
+            const data = {
+                mode: this.modalMode,
+                field: this.field
+            }
 
-            this.axios({
-                params: {                        
-                        action: 'get-additional-fields',
-                        mode: this.modalMode,
-                        field_id: this.field,
-                    }
-                })
+            this.$module
+            .ajax('get-additional-fields', data )
                 .then((response) => {
-                    this.additionalFields = response.data
-                    //console.log(response.data)
+                    this.additionalFields = response                    
                 })
                 .catch(e => {
                     console.log(e)
@@ -303,11 +306,10 @@ import SweetAlert from './SweetAlert.vue'
     mounted(){
 
         this.$root.$on('bv::modal::show', (bvEvent, modalId) => {            
-            this.loadAdditionalFields()
+            this.getAdditionalFields()
         })
 
         this.$root.$on('bv::modal::hide', (bvEvent, modalId) => {
-
             this.resetModal()
         })
     }

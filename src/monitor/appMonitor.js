@@ -3,6 +3,8 @@ import App from './App.vue'
 
 //  Constants set via Backend
 var baseURL = stph_dt_getBaseUrlFromBackend()
+var stph_dt_module = stph_dt_getModuleFromBackend();
+
 
 //  Axios  
 import axios from 'axios'
@@ -11,11 +13,13 @@ Vue.use(VueAxios, axios.create({
   baseURL: baseURL,
 }))
 
-
 //  Bootstrap Vue
 import { BootstrapVue } from 'bootstrap-vue'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 Vue.use(BootstrapVue)
+
+//  Add REDCap JavaScript Module Object all Vue instances globally
+Vue.prototype.$module = stph_dt_module
 
 //  Create Vue Instance and mount our module page container
 new Vue({

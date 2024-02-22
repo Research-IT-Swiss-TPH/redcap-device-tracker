@@ -23,7 +23,8 @@
     props: {
         rows: Number,
         record: String,
-        field: String
+        field: String,
+        event_id: String
     },
     data() {
         return {
@@ -33,28 +34,25 @@
     },
     methods: {
         async getTrackingLogs() {
-            this.axios({
-                params: {                        
-                        action: 'get-tracking-logs',
-                        owner_id: this.record,
-                        tracking_field: this.field,
-                    }
-                })
-                .then((response) => {
-                    this.isProcessing = false
-                    this.items = response.data
-                    //console.log(response.data)
-                })
-                .catch(e => {
-                    console.log(e)
-                })
+            const data = {
+                record: this.record,
+                field: this.field,
+                event_id: this.event_id
+            }
+            this.$module
+            .ajax('get-tracking-logs', data)
+            .then((response) => {                
+                this.isProcessing = false
+                this.items = response
+            }).catch((err) => {
+                console.log(err)
+            });
         }
     },
     mounted() {
         setTimeout(()=>{
             this.getTrackingLogs()
         }, 750)
-        
     }
 }
 </script>
