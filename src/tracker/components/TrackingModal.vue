@@ -199,7 +199,7 @@
         async handleTracking() {
 
             const data = {                
-                mode: this.modalMode,
+                action: this.modalMode,
                 event_id: this.page.event_id,
                 owner_id: this.page.record_id,
                 field_id: this.field,
@@ -207,7 +207,7 @@
                 user_id: this.page.user_id,
                 extra: JSON.stringify(this.extra)
             }
-            
+
             this.$module
             .ajax('handle-tracking', data)
                 .then(response => {

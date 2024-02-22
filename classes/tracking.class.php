@@ -5,7 +5,7 @@ use REDCap;
 
 class Tracking {
 
-    public String $mode;
+    public String $action;
     public String $id;
     public Int $project;
     public Int $event;
@@ -16,40 +16,36 @@ class Tracking {
     public String $user;
     public String $timestamp;
 
-    public function __construct($request = []) {
+    public function __construct($payload = []) {
 
-        if(!empty($request) && is_array($request) ) {
-
-            
+        if(!empty($payload) && is_array($payload) ) {
+           
             $this->project  = PROJECT_ID;
             
-            $this->mode     = htmlspecialchars($request["mode"]);
-            $this->event    = htmlspecialchars($request["event_id"]);
-            $this->owner    = htmlspecialchars($request["owner_id"]);
-            $this->field    = htmlspecialchars($request["field_id"]);
-            $this->device   = htmlspecialchars($request["device_id"]);
-            $this->user     = htmlspecialchars($request["user_id"]);
+            $this->action = $payload["action"];
+            $this->event = $payload["event_id"];
+            $this->owner = $payload["owner_id"];
+            $this->field = $payload["field_id"];
+            $this->device = $payload["device_id"];
+            $this->user = $payload["user_id"];
 
-            //  Replace this in future with https://github.com/ramsey/uuid
             $this->id       = hash('sha256', $this->owner . "." . $this->device . "." . $this->project);
             $this->timestamp = date("Y-m-d H:i:s");
 
-            //  escape converts json string into special HTML entitites,
-            //  we need to revert in order to json decode
             $this->extra = [];
-            if(!empty($request["extra"]) && is_array(json_decode($request["extra"], true))) {
-                $this->extra = array_map("htmlspecialchars", json_decode($request["extra"], true));
+            if(!empty($payload["extra"]) && is_array(json_decode($payload["extra"], true))) {
+                $this->extra = json_decode($payload["extra"], true);
             }            
             
 
         } else {
-            throw new Exception("Invalid Request");
+            throw new Exception("Invalid Payload");
         }
     }
     
     public function validateSessionData($lastSessionId, $lastSessionState, $isLastSessionUntracked) {
         //  Do checks and determine ID of session to bes saved (different for every action)
-        if($this->mode == 'assign') {
+        if($this->action == 'assign') {
             if( ($lastSessionState != "") && ($lastSessionState != 0) ) {
                 throw new Exception ("Invalid current instance state. Expected 0, found: " . $lastSessionState);
             }
@@ -61,14 +57,14 @@ class Tracking {
             }
         }
 
-        if($this->mode == 'return') {
+        if($this->action == 'return') {
             if( $lastSessionState != 1) {
                 throw new Exception ("Invalid current instance state. Expected 1, found: " . $lastSessionState);
             }
             $saveSessionId = $lastSessionId;
         }
 
-        if($this->mode == 'reset') {
+        if($this->action == 'reset') {
             if( $lastSessionState != 2) {
                 throw new Exception ("Invalid current instance state. Expected 2, found: " . $lastSessionState);
             }
@@ -79,7 +75,7 @@ class Tracking {
 
     public function validateTrackingId($currentTrackingId) {
             //  Do checks (different for every action)
-            if($this->mode == 'assign') {
+            if($this->action == 'assign') {
                 if(!empty($currentTrackingId)) {
                     throw new Exception("Invalid current tracking field. Expected NULL found: " . $currentTrackingId);
                 }
@@ -92,7 +88,7 @@ class Tracking {
 
     public function saveDataToDevices($devices_project_id, $devices_event_id, $saveSessionId) {
 
-        if($this->mode == "assign") {
+        if($this->action == "assign") {
             $values = [
                 "session_tracking_id" => $this->id,
                 "session_owner_id" => $this->owner,
@@ -103,14 +99,14 @@ class Tracking {
             ];
         }
 
-        if($this->mode == "return") {
+        if($this->action == "return") {
             $values = [
                 "session_device_state" => 2,
                 "session_return_date" => $this->timestamp
             ];
         }
 
-        if($this->mode == "reset") {
+        if($this->action == "reset") {
             $values = [
                 "session_device_state" => 0,
                 "session_reset_date" => $this->timestamp
@@ -145,12 +141,12 @@ class Tracking {
         $dataValues_t = [];
         
         //  Save tracking id into tracking project
-        if($this->mode == 'assign') {
+        if($this->action == 'assign') {
             $dataValues_t[$this->field] = $this->id;
         }
 
         //  Check if has extra and set if true
-        $hasExtra = !empty($this->extra) && $this->checkHasExtra($tracking_settings, $this->mode);
+        $hasExtra = !empty($this->extra) && (bool) $tracking_settings["use-additional-".$this->action];
         if($hasExtra) {
             //  Add extra fields to data to be saved
             foreach ($this->extra as $key => $value) {
@@ -165,15 +161,15 @@ class Tracking {
 
             $sync_data = [];
 
-            if($this->mode == 'assign' && !empty($tracking_settings["sync-date-assign"])) {
+            if($this->action == 'assign' && !empty($tracking_settings["sync-date-assign"])) {
                 $sync_data[$tracking_settings["sync-date-assign"]] = $this->timestamp;
             }
             
-            if($this->mode == 'return' && !empty($tracking_settings["sync-date-return"]) ) {
+            if($this->action == 'return' && !empty($tracking_settings["sync-date-return"]) ) {
                 $sync_data[$tracking_settings["sync-date-return"]] = $this->timestamp;
             }
 
-            if($this->mode == 'reset' && !empty($tracking_settings["sync-date-reset"]) ) {
+            if($this->action == 'reset' && !empty($tracking_settings["sync-date-reset"]) ) {
                 $sync_data[$tracking_settings["sync-date-reset"]] = $this->timestamp;
             }                
 
@@ -189,7 +185,7 @@ class Tracking {
         }
         
         //  Perform actual save only if we have data for the specific action to be saved or sync enabled
-        if($this->mode == 'assign' || $hasSync || $hasExtra) {
+        if($this->action == 'assign' || $hasSync || $hasExtra) {
 
             $data_t = [ $this->owner => [$this->event => $dataValues_t ] ];
             
@@ -205,41 +201,17 @@ class Tracking {
     }
 
     /**
-     * Check if current action has extra fields
-     * enabled by mode/action
-     * 
-     */
-    private function checkHasExtra($settings):bool {
-
-        if( $this->mode == 'assign') {
-            return (bool) $settings["use-additional-assign"];
-        }
-
-        if( $this->mode == 'return') {
-            return (bool) $settings["use-additional-return"];
-        }
-
-        if( $this->mode == 'reset') {
-            return (bool) $settings["use-additional-reset"];
-        }
-
-        return false;
-
-    }    
-
-
-    /**
      * Needed for sync
      * 
      */
     public function getDeviceStateByMode() {
-        if($this->mode == "assign" ) {
+        if($this->action == "assign" ) {
             return 1;
         }
-        if($this->mode == "return" ) {
+        if($this->action == "return" ) {
             return 2;
         }
-        if($this->mode == "reset" ) {
+        if($this->action == "reset" ) {
             return 0;
         }        
     }

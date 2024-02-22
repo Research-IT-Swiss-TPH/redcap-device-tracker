@@ -144,12 +144,15 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       currentPage: 1,
       fields: [{
         key: 'log_id',
-        sortable: true
+        sortable: true,
+        label: "ID"
       }, {
-        key: 'message'
+        key: 'message',
+        label: "Log Event"
       }, {
         key: 'project_id',
-        sortable: true
+        sortable: true,
+        label: "Project"
       }, {
         key: 'record',
         sortable: true

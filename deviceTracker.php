@@ -178,10 +178,10 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         if(empty($payload["owner_id"])) {
             throw new Exception("'owner_id' must be set!");
         }
-        if(empty($payload["mode"])) {
-            throw new Exception("'mode' must be set!");
+        if(empty($payload["action"])) {
+            throw new Exception("'action' must be set!");
         }
-        if( !in_array( $payload["mode"], array('assign', 'return', 'reset'))){
+        if( !in_array( $payload["action"], array('assign', 'return', 'reset'))){
             throw new Exception("Invalid tracking action!");
         }
 
@@ -239,10 +239,11 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $logId = $this->log(
                 "tracking-action",
                 [
-                    "action"=> $tracking->mode,
+                    "action"=> $tracking->action,
                     "field" => $tracking->field,
                     "value" => $tracking->device,
                     "record" => $tracking->owner,
+                    "event" => $tracking->event,
                     "session" => $lastSessionId,
                     "user" => $tracking->user,
                     "date" => $tracking->timestamp,
@@ -264,11 +265,13 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             //  Save to logs
             $this->log("tracking-error", [
                 "error" => $th->getMessage(),
-                "action"=> $tracking->mode,
+                "action"=> $tracking->action,
                 "field"=> $tracking->field,
+                "event" => $tracking->event,
                 "value"=> $tracking->device,
                 "record" => $tracking->owner,
                 "user" => $tracking->user,
+                "date" => $tracking->timestamp
             ]);
 
             //  Send to Frontend
@@ -411,12 +414,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         //  system/project context
         if($record === null) {
 
-            $sql = "select log_id, message, project_id, date, user, action, field, value, record, instance, error";
+            $sql = "select log_id, message, project_id, event, date, user, action, field, value, record, instance, error";
             $parameters = [];
 
             //  project context
             if($project_id !== null) {
-                $sql = "select log_id, message, date, user, action, field, value, record, instance, error WHERE project_id = ?";
+                $sql = "select log_id, message, event,date, user, action, field, value, record, instance, error WHERE project_id = ?";
                 $parameters = [$project_id];                
             }
             $result = $this->queryLogs($sql, $parameters);

@@ -13,7 +13,7 @@
                     :per-page="perPage"
                     :current-page="currentPage"
                     :fields="fields"
-                    :items="items">
+                    :items="items">             
                 </b-table>
 
                 <b-pagination
@@ -34,9 +34,9 @@
                 perPage: 20,
                 currentPage: 1,
                 fields: [
-                { key: 'log_id', sortable: true },
-                { key: 'message'},
-                { key: 'project_id', sortable: true},
+                { key: 'log_id', sortable: true, label:"ID" },
+                { key: 'message', label: "Log Event"},
+                { key: 'project_id', sortable: true, label: "Project"},
                 { key: 'record', sortable: true },
                 { key: 'user', sortable: true },
                 { key: 'date', sortable: true },

@@ -757,7 +757,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
             switch (_context2.prev = _context2.next) {
               case 0:
                 data = {
-                  mode: _this2.modalMode,
+                  action: _this2.modalMode,
                   event_id: _this2.page.event_id,
                   owner_id: _this2.page.record_id,
                   field_id: _this2.field,
