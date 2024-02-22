@@ -37,7 +37,7 @@
                     <p class="text-monospace">{{ error.data.message }}</p>
                     <hr>
                     <p class="mb-0">
-                        An administrator has been notified about the issue.
+                        Please notify an administrator about this issue.
                     </p>
                 </b-alert>
             </div>            
