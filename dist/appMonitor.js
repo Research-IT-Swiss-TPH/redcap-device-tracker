@@ -154,6 +154,8 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         sortable: true,
         label: "Project"
       }, {
+        key: 'event'
+      }, {
         key: 'record',
         sortable: true
       }, {

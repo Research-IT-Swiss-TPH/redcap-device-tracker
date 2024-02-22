@@ -131,36 +131,15 @@
     },
     methods: {
 
-        handleAxiosError(error) {
-            // The request was made and the server responded with a status code
-            // that falls out of the range of 2xx                    
-            if(error.response) {
-                this.actionError.data = error.response.data
-                this.actionError.msg = error.message
-                //console.log(error.response.status);
-                //console.log(error.response.headers);
+        handleAjaxError(error){
+            if(typeof error === 'string') {
+                this.actionError.data = {}
+                this.actionError.msg = error
 
-            } else if (error.request) {
-                // The request was made but no response was received
-                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-                // http.ClientRequest in node.js
-                //console.log(error.request.response);
-                this.actionError.data = {}
-                this.actionError.data.message = error.request.responseText
-                this.actionError.msg = "No response was received."
-            } else {
-                // Something happened in setting up the request that triggered an Error
-                this.actionError.data = {}
-                this.actionError.data.message =  error.message
-                this.actionError.msg = "Unknown error."
-                //console.log('Error', error.message);
             }
+            console.log(typeof error)
             this.hasActionError = true
-            this.actionError.config = error.config
-            //console.log(error)
-            //console.log(error.config);
         },
-
         async validateDevice() {
             if(this.userInput == "") {
                 this.isValidDevice = null
@@ -215,8 +194,8 @@
                     this.setProcessSuccess()
                 })
                 .catch(error => {
-                    console.log(error)
-                    this.handleAxiosError(error)
+                    //console.log(error)
+                    this.handleAjaxError(error)
                 })
                 .finally(()=>{
                     this.isProcessing = false

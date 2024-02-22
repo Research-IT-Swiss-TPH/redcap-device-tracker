@@ -37,6 +37,7 @@
                 { key: 'log_id', sortable: true, label:"ID" },
                 { key: 'message', label: "Log Event"},
                 { key: 'project_id', sortable: true, label: "Project"},
+                { key: 'event'},
                 { key: 'record', sortable: true },
                 { key: 'user', sortable: true },
                 { key: 'date', sortable: true },

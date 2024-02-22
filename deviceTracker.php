@@ -168,7 +168,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     }
 
     private function ajax_handleTracking($payload){
-        
+       
         if(empty($payload["device_id"])) {
             throw new Exception("'device_id' must be set!");
         }
@@ -224,7 +224,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
              */
 
             //  Get tracking settings
-            $tracking_settings = $this->getTrackingSettings($tracking->field);
+            $tracking_settings = $this->getTrackingSettingsForField($tracking->field);
 
             list($saved_t, $hasExtra, $sync_data) = $tracking->saveDataToTracking($tracking_settings);
 
@@ -274,9 +274,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 "date" => $tracking->timestamp
             ]);
 
-            //  Send to Frontend
-            //$this->sendError(500, $th, $tracking_settings);
-            throw new Exception($th);
+            throw new Exception("<br><br><b>".$th->getMessage() . "</b><br>Exception thrown at line <i>" . $th->getLine(). "</i> in file <i>" . $th->getFile() . "</i>");
         }
 
         $response = array(
@@ -389,7 +387,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
         $additionalFields = [];
 
-        $tracking = $this->getTrackingForField($field);
+        $tracking = $this->getTrackingSettingsForField($field);
         
         if($tracking["use-additional-" . $mode]) {
             foreach ($tracking["additional-fields-" . $mode] as $key => $additionalField) {
@@ -817,18 +815,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     // Controllers
     //-----------------------------------------------------
 
-    private function getTrackingSettings($tracking_field) {
-        $tracking_settings = [];
-        foreach ($this->getSubSettings('trackings') as $key => $settings) {
-            if($settings["tracking-field"] == $tracking_field) {
-                $tracking_settings =  $settings;
-                break;
-            }
-        }
-        return $tracking_settings;
-    }
-
-
     /**
      * Get a list of all available devices by [device_type]
      * where [session_device_state] is blank or 0
@@ -868,54 +854,25 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         return REDCap::getData($params);
     }   
 
-    /**
-     * Check if current action has extra fields
-     * enabled by mode/action
-     * 
-     */
-    private function checkHasExtra($settings, $mode):bool {
-
-        if($mode == 'assign') {
-            return (bool) $settings["use-additional-assign"];
-        }
-
-        if($mode == 'return') {
-            return (bool) $settings["use-additional-return"];
-        }
-
-        if($mode == 'reset') {
-            return (bool) $settings["use-additional-reset"];
-        }
-
-        return false;
-
-    }
 
     /**
-     * Check if current action has device data sync 
-     * enabled by mode/action
-     * 
-     */
-    private function checkHasSync($settings):bool {
-        return (bool) $settings["use-sync-data"];
-    }
-
-    /**
-     * Get Tracking for Field
+     * Get Tracking Settings for a Tracking Field
      * 
      * @since 1.0.0
      */
-    private function getTrackingForField($field) {
+    private function getTrackingSettingsForField($tracking_field) {
         $trackings = $this->getSubSettings('trackings');
-        $trackings_filtered = array_filter($trackings, function($tracking) use ($field){
-            return $tracking["tracking-field"] == $field;
+        $trackings_filtered = array_filter($trackings, function($tracking) use ($tracking_field){
+            return $tracking["tracking-field"] == $tracking_field;
         });
 
         if(count($trackings_filtered) > 1) {
-            throw new Exception("Invalid trackings count for field " . $field);
+            throw new Exception("Invalid trackings count for field " . $tracking_field);
         }
 
-        return reset($trackings_filtered);
+        $trackingSettings = reset($trackings_filtered);
+
+        return $trackingSettings;
     }
 
     /**
@@ -1062,108 +1019,5 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             return array(trim($str));
         }
         
-    }
-
-
-
-   /**  
-    * 
-    * Echoes sucessful JSON response
-    *   
-    * @return void
-    * @since 1.0.0
-    *
-    */      
-    private function sendResponse($response) {
-        header('Content-Type: application/json; charset=UTF-8');        
-        echo json_encode($response);
-        exit();
-    }
-
-   /**  
-    * 
-    * Echoes error JSON response
-    *   
-    * @return void
-    * @since 1.0.0
-    *
-    */      
-    private function sendError($status = 400, $th = null, $settings = [] ) {
-       
-        header('Content-Type: application/json; charset=UTF-8');
-        switch ($status) {
-            case 500:
-                header("HTTP/1.1 500 Internal Server Error'");
-                break;
-            case 400:
-                header("HTTP/1.1 400 Bad Request");
-                break;
-            case 404:
-                header("HTTP/1.1 404 Not Found");
-                break;                    
-            case 403:
-                header("HTTP/1.1 403 Forbidden");
-                break;
-            default:
-                # code...
-                break;
-        }
-        if($th != null) {
-            echo json_encode([
-                'message' => $th->getMessage(),
-                'code' => $status,
-                'file' => $th->getFile(),
-                'line' => $th->getLine(),
-                'trace' => $th->getTrace(),
-                'settings' => $settings
-            ]);
-        }
-        die();
-
-    }
-
-
-    /**
-     * Duplicate of escape method from ExternalModules class, since it has been added in v13.1.2 and might not be supported
-     * on most insitutions
-     * 
-     * @since 1.0.0
-     */
-	public static function escape($value){
-		$type = gettype($value);
-
-		/**
-		 * The unnecessary casting on these first few types exists solely to inform psalm and avoid warnings.
-		 */
-		if($type === 'boolean'){
-			return (bool) $value;
-		}
-		else if($type === 'integer'){
-			return (int) $value;
-		}
-		else if($type === 'double'){
-			return (float) $value;
-		}
-		else if($type === 'array'){
-			$newValue = [];
-			foreach($value as $key=>$subValue){
-				$key = static::escape($key);
-				$subValue = static::escape($subValue);
-				$newValue[$key] = $subValue;
-			}
-
-			return $newValue;
-		}
-		else if($type === 'NULL'){
-			return null;
-		}
-		else{
-			/**
-			* Handle strings, resources, and custom objects (via the __toString() method. 
-			* Apart from escaping, this produces that same behavior as if the $value was echoed or appended via the "." operator.
-			*/
-			return htmlspecialchars(''.$value, ENT_QUOTES);
-		}
-	}    
-    
+    }    
 }
