@@ -5,12 +5,12 @@
             <div v-if="config.length > 0" v-for="item in config" >
                 <div v-if="item.valid" class="darkgreen" style="color:green;">
                     <b>TEST {{item.id}}: {{item.rule}}</b>
-                    <br><br><img :src="rootPath" />
+                    <br><br><img :src="tickImgPath" />
                     <b>SUCCESSFUL!</b>
                 </div>
                 <div v-else class="red">
                     <b>TEST {{item.id}}: {{item.rule}}</b>
-                    <br><br><img :src="rootPath" />
+                    <br><br><img :src="tickImgPath" />
                     <b>FAILURE!</b><br/>
                     <div v-if="item.diff">
                         <p>Required: <br><pre>{{ item.rule }}</pre></p>
@@ -31,14 +31,14 @@
         data() {
             return {
                 config: [],
-                rootPath: '',
+                tickImgPath: '',
                 isProjectPage
             }
         },
 
         mounted() {
             this.config = stph_dt_getConfigFromBackend(),
-            this.rootPath = stph_dt_getRootFromBackend()+'Resources/images/tick.png',
+            this.tickImgPath = stph_dt_getRootFromBackend()+'Resources/images/tick.png',
             this.isProjectPage = stph_dt_getIsProjectPage()
         }
     }

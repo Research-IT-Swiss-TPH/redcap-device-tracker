@@ -10,13 +10,6 @@ console.log(backend);
 var stph_dt_module = stph_dt_getModuleFromBackend();
 //console.log(stph_dt_module);
 
-//  Axios  
-import axios from 'axios'
-import VueAxios from 'vue-axios'
-Vue.use(VueAxios, axios.create({
-  baseURL: backend.base_url,
-}))
-
 //  Bootstrap Vue
 import { BootstrapVue } from 'bootstrap-vue'
 import 'bootstrap-vue/dist/bootstrap-vue.css'

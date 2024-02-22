@@ -5,14 +5,6 @@ import App from './App.vue'
 var baseURL = stph_dt_getBaseUrlFromBackend()
 var stph_dt_module = stph_dt_getModuleFromBackend();
 
-
-//  Axios  
-import axios from 'axios'
-import VueAxios from 'vue-axios'
-Vue.use(VueAxios, axios.create({
-  baseURL: baseURL,
-}))
-
 //  Bootstrap Vue
 import { BootstrapVue } from 'bootstrap-vue'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
