@@ -94,7 +94,16 @@
                         "field": "use-sync-data",
                         "value": true
                     }
-                },                                
+                },
+                {
+                    "key": "sync-device-id",
+                    "type": "field-list",
+                    "name": "Field to sync 'device_id'",
+                    "branchingLogic": {
+                        "field": "use-sync-data",
+                        "value": true
+                    }
+                },                                      
                 {
                     "key": "use-additional-assign",
                     "type": "checkbox",

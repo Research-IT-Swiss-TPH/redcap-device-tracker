@@ -163,6 +163,11 @@ class Tracking {
 
             if($this->action == 'assign' && !empty($tracking_settings["sync-date-assign"])) {
                 $sync_data[$tracking_settings["sync-date-assign"]] = $this->timestamp;
+
+                if( !empty($tracking_settings["sync-device-id"])) {
+                    $sync_data[$tracking_settings["sync-device-id"]] = $this->device;
+                }                
+
             }
             
             if($this->action == 'return' && !empty($tracking_settings["sync-date-return"]) ) {
@@ -176,6 +181,8 @@ class Tracking {
             if( !empty($tracking_settings["sync-state"])) {
                 $sync_data[$tracking_settings["sync-state"]] = $this->getDeviceStateByMode();
             }
+
+
             
             //  Add sync fields to data to be saved
             foreach ($sync_data as $key => $value) {
