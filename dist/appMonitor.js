@@ -60526,7 +60526,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 //  Constants set via Backend
-var baseURL = stph_dt_getBaseUrlFromBackend();
 var stph_dt_module = stph_dt_getModuleFromBackend();
 
 //  Bootstrap Vue

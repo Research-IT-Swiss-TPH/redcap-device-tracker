@@ -41,8 +41,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     private $tracking_fields;
     private $tracking_event;
 
-    private bool $isTesting = false;
-
 
     //======================================================================
     // Methods
@@ -58,8 +56,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
     //-----------------------------------------------------
 
     private function initModule() {
-        //  Check if we are in testing context
-        $this->isTesting = ExternalModules::isTesting();
 
         //  Setup Project Context if pid is available through request and constant is not yet defined
         if(isset($_GET["pid"]) && !defined('PROJECT_ID')) {
@@ -77,31 +73,19 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * @since 1.0.0
      */
     private function setDeviceProject() {
-        $this->devices_project_id = $this->isTesting ? self::getTestSystemSetting("devices-project") : $this->getSystemSetting("devices-project");
+        $this->devices_project_id = $this->getSystemSetting("devices-project");
         if(!empty($this->devices_project_id)) {
             $this->devices_event_id = (new \Project( $this->devices_project_id ))->firstEventId;
         }
     }
 
-    /**
-     * Mock test system setting that 
-     * are not accessible through getSystemSetting
-     * 
-     * @since 1.0.0
-     */
-    private static function getTestSystemSetting($key) {
-        if($key == "devices-project") {
-            //  Return first Test Project
-            return ExternalModules::getTestPIDs()[0];
-        }
-    }    
     
     /**
-     * Hooks Device Tracker module to redcap_every_page_top
+     * Hooks Device Tracker module to redcap_data_entry_form
      *
      * @since 1.0.0
      */
-    public function redcap_every_page_top($project_id = null) {
+    public function redcap_data_entry_form($project_id = null) {
         if($this->isValidTrackingPage()) {
             if(!$this->isValidDevicesProject()) {
                 $this->renderAlertInvalidDevices();
@@ -483,7 +467,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      */
     private function isValidTrackingPage() {
         //  Check if valid Data Entry page
-        if($this->isPage('DataEntry/index.php') && isset( $_GET['id']) && defined('USERID')) {
+        if(isset( $_GET['id']) && defined('USERID')) {
             
             $this->initModule();
             $all_tracking_fields = $this->getAllTrackingFields();
@@ -529,7 +513,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         $config = array();
 
         //  Get project id in correct context
-        $pid = $this->isTesting ? self::getTestSystemSetting("devices-project") : $this->getSystemSetting("devices-project");
+        $pid = $this->getSystemSetting("devices-project");
 
         /**
          * 1.0 Check if Device Project has been set
@@ -683,8 +667,6 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
 
         $this->initializeJavascriptModuleObject();
 
-        $tracking_fields = $this->tracking_fields;
-
         //  Loop through all tracking fields for each form and insert for each a wrapper into DOM,
         //  so that vue can actually mount an  there.
         foreach ($this->tracking_fields as $key => $tracking_field) {
@@ -700,7 +682,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         <script type='text/javascript'>
             $(function() {
                 $(document).ready(function() {
-                    var trackings =  <?=json_encode($tracking_fields) ?>;
+                    var trackings =  <?=json_encode($this->tracking_fields) ?>;
                     trackings.forEach(function(tracking_field){
                         //  Insert vue target
                         var target = $('tr#'+tracking_field+'-tr').find('input');

@@ -2,7 +2,6 @@ import Vue from 'vue'
 import App from './App.vue'
 
 //  Constants set via Backend
-var baseURL = stph_dt_getBaseUrlFromBackend()
 var stph_dt_module = stph_dt_getModuleFromBackend();
 
 //  Bootstrap Vue

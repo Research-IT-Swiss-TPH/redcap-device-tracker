@@ -24,10 +24,6 @@ namespace STPH\deviceTracker;
         return <?=$module->getJavascriptModuleObjectName()?>;
     }
 
-    const stph_dt_getBaseUrlFromBackend = function () {
-        return '<?= $module->getUrl("requestHandler.php") ?>'
-    }
-
     const stph_dt_getConfigFromBackend = function() {
         return <?= json_encode($module->getConfig()) ?>
     }
