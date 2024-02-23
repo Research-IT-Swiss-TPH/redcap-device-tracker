@@ -41,9 +41,9 @@
             }
             this.$module
             .ajax('get-tracking-logs', data)
-            .then((response) => {                
-                this.isProcessing = false
-                this.items = response
+            .then((response) => {
+                this.isProcessing = false                
+                this.items = response.slice(-3);
             }).catch((err) => {
                 console.log(err)
             });

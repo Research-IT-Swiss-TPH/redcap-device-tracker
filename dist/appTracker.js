@@ -510,7 +510,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
                 };
                 _this.$module.ajax('get-tracking-logs', data).then(function (response) {
                   _this.isProcessing = false;
-                  _this.items = response;
+                  _this.items = response.slice(-3);
                 })["catch"](function (err) {
                   console.log(err);
                 });
