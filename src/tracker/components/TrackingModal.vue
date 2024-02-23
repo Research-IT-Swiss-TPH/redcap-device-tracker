@@ -159,7 +159,7 @@
                 .ajax('validate-device', data)                            
                     .then( response => {         
                         if(response) {
-                            if(response.device_id == data.device_id+1) {
+                            if(response.device_id == data.device_id) {
                                 document.activeElement.blur();
                                 this.isValidDevice = true
                             } else {
