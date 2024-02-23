@@ -1,6 +1,8 @@
 <template>
     <div class="tracking-log-table">
-        <small class="text-muted mb-1 mt-3">Tracking Log</small>
+        <div class="d-flex  mb-1 mt-3 justify-content-between">
+            <small class="text-muted">Tracking Log</small>        
+        </div>
         <b-skeleton-table
         v-if="isProcessing"
         :rows="rows"
@@ -43,7 +45,8 @@
             .ajax('get-tracking-logs', data)
             .then((response) => {
                 this.isProcessing = false                
-                this.items = response.slice(-3);
+                this.items = response.slice(-3).reverse();
+                //this.items = response
             }).catch((err) => {
                 console.log(err)
             });
@@ -57,4 +60,11 @@
 }
 </script>
 <style scoped>
+.dt-click {
+    cursor: pointer;
+}
+
+.dt-click:hover {
+    color:#007bffcc!important;
+}
 </style>

@@ -41,7 +41,7 @@
                                     Device ID found. Valid device.
                                 </b-form-valid-feedback>
                                 <b-form-invalid-feedback>
-                                    Device ID not found or invalid device state.
+                                    {{ device_id_invalid_feedback }}                                    
                                 </b-form-invalid-feedback>                
                             </b-input-group>   
                         </b-form-group>
@@ -117,6 +117,7 @@
             userInput: "",
             isValidDevice: null,
             isValidating: false,
+            device_id_invalid_feedback:"",
 
             additionalFields: [],
             isAdded: false,
@@ -158,13 +159,21 @@
                 .ajax('validate-device', data)                            
                     .then( response => {         
                         if(response) {
-                            document.activeElement.blur();
-                            this.isValidDevice = true
+                            if(response.device_id == data.device_id+1) {
+                                document.activeElement.blur();
+                                this.isValidDevice = true
+                            } else {
+                                this.device_id_invalid_feedback = response.validation_message
+                                this.isValidDevice = false
+                            }
+
                         } else {
+                            this.device_id_invalid_feedback = "Device is not available for unknown reasons. Please notify Administrator."
                             this.isValidDevice = false
                         }
                     })
                     .catch(e => {
+                        this.device_id_invalid_feedback = "An error occured. Please check logs."
                         this.isValidDevice = false
                         console.log(e.message)
                     })

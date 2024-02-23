@@ -295,11 +295,23 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
         $availableDevices = $this->getAvailableDevices($types);
 
         $device = $availableDevices[$device_id];
-        if(isset($device)) {
-            return array("device_id" => $device_id);
-        } else {
-           return false;
+
+        //  Check if device is within available devices
+        if(!isset($device)){
+            return array("validation_message" => "Device is not available.");
         }
+
+        $suspension_date = strtotime(reset($device)["device_suspension_date"]);
+        if( $suspension_date < time()) {
+            return array("validation_message" => "Device (ID:".$device_id.") has been suspended:  " . reset($device)["device_suspension_date"]);
+        }
+
+        if(isset($device) && ($suspension_date > time())) {
+            return array("device_id" => $device_id);
+        }
+
+        return false;
+       
     }
 
     private function ajax_getTrackingData($payload, $project_id){
@@ -827,15 +839,16 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $filterLogic .= " and " . $filterForTypes;
         }
 
+
+
         $params = array(
             'project_id' => $this->getSystemSetting("devices-project"),
             'filterLogic'=> $filterLogic, 
-            'fields'=>array('record_id', 'device_type', 'session_device_state')
+            'fields'=>array('record_id', 'device_type', 'session_device_state', 'device_registration_date' ,'device_suspension_date')
         );
 
         return REDCap::getData($params);
     }   
-
 
     /**
      * Get Tracking Settings for a Tracking Field
