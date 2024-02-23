@@ -1,5 +1,6 @@
 <template>
       <b-modal 
+        centered
         id="tracking-modal" 
         header-class="justify-content-center"
         hide-header-close
@@ -88,7 +89,7 @@
                 <b-button v-if="isActionInit" style="text-transform: capitalize;" :disabled="modalMode == 'assign'&&!isValidDevice"  class="btn-primaryrc" @click="handleTracking()">
                     <span v-if="!isProcessing">{{ modalMode }} Device</span>
                     <b-spinner small v-else></b-spinner>
-                </b-button>                                
+                </b-button>
             </template>
       </b-modal>
   </template>

@@ -24,7 +24,8 @@
         "get-additional-fields",
         "get-tracking-logs",
         "validate-device",
-        "handle-tracking"
+        "handle-tracking",
+        "delete-tracking"
     ],
 
     "system-settings": [

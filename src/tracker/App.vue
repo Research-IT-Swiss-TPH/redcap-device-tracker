@@ -68,6 +68,13 @@
         :record="page.record_id"
         :event_id="page.event_id"
       />
+      
+      <tracking-delete
+      v-if="tracking.session_tracking_id"
+        :tracking="tracking"
+        :field="field"
+      />
+
 
       <b-alert
         :show="dismissCountDown"
@@ -94,6 +101,7 @@
   import TrackingState from './components/TrackingState'
   import TrackingLog from './components/TrackingLog'
   import TrackingModal from './components/TrackingModal'
+  import TrackingDelete from './components/TrackingDelete'
 
   export default {
     name: 'App',
@@ -101,7 +109,8 @@
       TrackingHeader,
       TrackingState,
       TrackingModal,
-      TrackingLog
+      TrackingLog,
+      TrackingDelete
     },
     data() {
       return {

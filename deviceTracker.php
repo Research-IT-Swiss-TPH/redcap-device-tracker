@@ -2,6 +2,7 @@
 
 use Exception;
 use REDCap;
+use Records;
 use ExternalModules\ExternalModules;
 
 //  Require composer dependencies during development only
@@ -78,14 +79,13 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             $this->devices_event_id = (new \Project( $this->devices_project_id ))->firstEventId;
         }
     }
-
     
     /**
      * Hooks Device Tracker module to redcap_data_entry_form
      *
      * @since 1.0.0
      */
-    public function redcap_data_entry_form($project_id = null) {
+    public function redcap_data_entry_form_top($project_id = null) {
         if($this->isValidTrackingPage()) {
             if(!$this->isValidDevicesProject()) {
                 $this->renderAlertInvalidDevices();
@@ -125,7 +125,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * Ajax 
      * 
      */
-    public function redcap_module_ajax($action, $payload, $project_id) {
+    public function redcap_module_ajax($action, $payload, $project_id, $record, $instrument, $event_id, $repeat_instance, $survey_hash, $response_id, $survey_queue_hash, $page, $page_full, $user_id, $group_id) {
         $this->initModule();
 
         switch ($action) {
@@ -134,7 +134,7 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 break;
             case 'get-additional-fields':
                 $result = $this->ajax_getAdditionalFields($payload, $project_id);
-                break;                
+                break;
             case 'get-tracking-logs':
                 $result = $this->ajax_getTrackingLogs($payload, $project_id);
                 break;
@@ -143,12 +143,123 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
                 break;
             case 'handle-tracking':
                 $result = $this->ajax_handleTracking($payload);
-                break;                
+                break;
+            case 'delete-tracking':
+                $result = $this->ajax_deleteTracking($payload, $project_id, $event_id, $repeat_instance, $record, $user_id);
+                break;
             default:
                 // Action not defined
                 throw new Exception ("Action $action is not defined");
         }
         return $result;
+    }
+
+    private function ajax_deleteTracking($payload, $project_id, $event_id, $repeat_instance, $record, $user_id){
+        
+        $affected_rows_tracking = 0;
+        $tracking_data = $payload["tracking"];
+        $field = $payload["field"];
+
+        if(empty($tracking_data)) {
+            throw new Exception("'tracking' must be set!");
+        }
+
+        if(empty($field)) {
+            throw new Exception("'field' must be set!");
+        }
+
+        //  check user rights      
+        $user = $this->getUser($user_id);
+        $record_delete_right =  (bool) $user->getRights([$project_id])["record_delete"];
+        $isSuperUser = $user->isSuperUser();
+        if(!$record_delete_right && !$isSuperUser) {
+            throw new Exception("user '".$user_id."' has not required user right 'record_delete' to delete a tracking.");
+        }
+
+        $tracking_settings = $this->getTrackingSettingsForField($field);
+
+        //  start deletion
+        try {
+
+        //  Begin database transaction
+        $this->beginDbTx();
+
+        /**
+         * Delete data in tracking project:
+         * tracking field
+         * sync fields
+         * additional fields
+         * 
+         */
+
+        $sync_fields = array_values(array_filter($tracking_settings, function($key){
+            return strpos($key, 'sync-') === 0;
+        },ARRAY_FILTER_USE_KEY));
+
+        $additional_fields = [];
+        foreach ($tracking_settings as $i => $v) {
+            if(strpos($i, 'additional-fields-') === 0) {
+                foreach ($tracking_settings[$i] as $j => $w) {
+                    foreach ($w as $k => $x) {
+                        $additional_fields[] = $x;
+                    }                   
+                }
+            }
+        }
+        $fields_to_delete = array_merge(array($field), $sync_fields, $additional_fields);
+        $field_names = implode("','", $fields_to_delete);
+
+        $data_table = method_exists('\REDCap', 'getDataTable') ? \REDCap::getDataTable($project_id) : "redcap_data";
+        $sqlTrackingProject = "DELETE FROM $data_table WHERE project_id = ? AND event_id = ? AND record = ? AND field_name IN ('$field_names')";       
+        $query = $this->createQuery();
+        $query->add($sqlTrackingProject, [$project_id, $event_id, $record]);
+        $query->execute();
+        $affected_rows_tracking = $query->affected_rows;
+
+
+        //  2. delete in devices project
+        /**
+         * Delete record instance from devices project
+         * 
+         */
+        $project_id_d = $this->devices_project_id;
+        $record_d = $tracking_data["record_id"];
+        $instrument_d = strtolower($tracking_data["redcap_repeat_instrument"]);
+        $event_id_d = $this->devices_event_id;
+        $instance_d = $tracking_data["redcap_repeat_instance"];
+        $log_event_id = Records::deleteForm($project_id_d, $record_d, $instrument_d, $event_id_d, $instance_d);
+
+
+        //  Write to log
+        $logId = $this->log(
+            "tracking-delete",
+            [
+                "action"=> 'tracking-delete',
+                "field" => $field,
+                "value" => $record_d,
+                "record" => $record,
+                "event" => $event_id,
+                "user" => $user_id,
+                "date" => date("Y-m-d H:i:s")
+            ]
+        );
+
+        //  End database transaction
+        $this->endDbTx();
+        
+        return array(
+            "tracking_id" => $tracking_data["session_tracking_id"],
+            "deleted_data_count" => $affected_rows_tracking
+        );
+
+        } catch(\Throwable $th) {
+
+            //  Rollback database
+            $this->rollbackDbTx();
+
+            return array("error" => $th->getMessage());
+        }
+
     }
 
     private function ajax_handleTracking($payload){

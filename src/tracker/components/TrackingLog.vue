@@ -60,11 +60,4 @@
 }
 </script>
 <style scoped>
-.dt-click {
-    cursor: pointer;
-}
-
-.dt-click:hover {
-    color:#007bffcc!important;
-}
 </style>
