@@ -10,7 +10,8 @@ REDCap External Module to cover the case for cross-project multi-device tracking
 - [x] Add documentation
 - [ ] Add unit tests
 - [ ] Add features: 
-  - [ ] log management
-  - [ ] tracking search
-  - [ ] device reporting
-  - [ ] multi-lang
+  - [x] full support for multiple events
+  - [x] device deletion
+  - [ ] tracking project config check
+  - [ ] log management (clear/clean logs)
+  - [ ] multi-lang support
