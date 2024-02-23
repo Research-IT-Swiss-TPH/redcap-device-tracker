@@ -1,10 +1,10 @@
 <template>
     <div>
         <b-tabs content-class="mt-3">
-            <b-tab title="Config" active><p>
+            <b-tab title="Config" ><p>
                 <tracking-config />
             </p></b-tab>
-            <b-tab title="Logs">
+            <b-tab title="Logs" active>
                 <tracking-logs />
             </b-tab>
         </b-tabs>

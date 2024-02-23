@@ -4,7 +4,14 @@ namespace STPH\deviceTracker;
     
     $module->initializeJavascriptModuleObject();
 ?>
-
+<h4 style="margin-top:0;" class="clearfix">
+<div class="pull-left float-left">
+    <i class="fas fa-satellite-dish"></i>
+    Device Tracker	</div>
+</h4>
+<p>
+    This page gives you an overview of your Device Tracker Configuration status and also access to project-wide tracking logs.
+</p>
 <div id="STPH_DT_MONITOR"></div>
 <script type='text/javascript'>
 

@@ -48140,11 +48140,16 @@ var render = function () {
         "b-tabs",
         { attrs: { "content-class": "mt-3" } },
         [
-          _c("b-tab", { attrs: { title: "Config", active: "" } }, [
+          _c("b-tab", { attrs: { title: "Config" } }, [
             _c("p", [_c("tracking-config")], 1),
           ]),
           _vm._v(" "),
-          _c("b-tab", { attrs: { title: "Logs" } }, [_c("tracking-logs")], 1),
+          _c(
+            "b-tab",
+            { attrs: { title: "Logs", active: "" } },
+            [_c("tracking-logs")],
+            1
+          ),
         ],
         1
       ),
