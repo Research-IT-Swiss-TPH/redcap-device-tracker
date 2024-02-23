@@ -3,12 +3,9 @@ import App from './App.vue'
 
 Vue.config.productionTip = false
 
-//  Constants set via Backend
-var backend = stph_dt_getDataFromBackend();
-console.log(backend);
-
+//  Passthroughs
+var stph_dt_backend = stph_dt_getDataFromBackend();
 var stph_dt_module = stph_dt_getModuleFromBackend();
-//console.log(stph_dt_module);
 
 //  Bootstrap Vue
 import { BootstrapVue } from 'bootstrap-vue'
@@ -19,14 +16,15 @@ Vue.use(BootstrapVue)
 import VueClipboard from 'vue-clipboard2'
 Vue.use(VueClipboard)
 
+
 //  Add REDCap JavaScript Module Object all Vue instances globally
 Vue.prototype.$module = stph_dt_module
 
-backend.fields.forEach(function(field, idx){
+stph_dt_backend.fields.forEach(function(field, idx){
   new Vue({
     render: h => h(App, {
       props: {
-        page: backend.page,
+        page: stph_dt_backend.page,
         field: field
       }
     }),

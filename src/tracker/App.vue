@@ -29,12 +29,12 @@
               readonly 
               :value="tracking.session_tracking_id || '--'" >
             </b-form-input>
-            <b-input-group-append >
+            <b-input-group-append>   
                 <b-button
                   copySource="Tracking ID"
                   :disabled="!tracking.session_tracking_id" 
                   v-clipboard:copy="tracking.session_tracking_id"
-                  v-clipboard:success="onCopy">
+                  v-clipboard:success="showAlert">
                     <i class="fa-regular fa-copy"></i>
                 </b-button>
             </b-input-group-append>
@@ -53,7 +53,7 @@
                   copySource="Tracking Device"
                   :disabled="!tracking.record_id"
                   v-clipboard:copy="tracking.record_id"
-                  v-clipboard:success="onCopy">
+                  v-clipboard:success="showAlert">
                     <i class="fa-regular fa-copy"></i>
                 </b-button>
             </b-input-group-append>            
@@ -68,6 +68,23 @@
         :record="page.record_id"
         :event_id="page.event_id"
       />
+
+      <b-alert
+        :show="dismissCountDown"
+        @dismissed="dismissCountDown=0"
+        @dismiss-count-down="countDownChanged"
+        class="position-fixed fixed-bottom m-0 rounded-0"
+        style="z-index: 2000;"
+        variant="warning"
+        dismissible>
+        <p>Copied "{{alertText}}" into clipboard.</p>
+        <b-progress
+        variant="warning"
+        :max="dismissSecs"
+        :value="dismissCountDown"
+        height="4px"
+      ></b-progress>
+      </b-alert>
 
     </div>
   </template>
@@ -90,6 +107,10 @@
       return {
         tracking: {},
         isLoading: true,
+        alertText: "",
+        showAlertTop: false,
+        dismissSecs: 3,
+        dismissCountDown: 0,
       }
     },
     props: {
@@ -98,6 +119,13 @@
         module: Object
     },
     methods: {
+      countDownChanged(dismissCountDown) {
+        this.dismissCountDown = dismissCountDown
+      },
+      showAlert(e) {
+        this.alertText = e.trigger.attributes.copySource.nodeValue
+        this.dismissCountDown = this.dismissSecs
+      },
 
       async getTrackingData() {
         
@@ -122,14 +150,6 @@
           .finally( () => {
             this.isLoading = false
           })        
-      },
-
-      onCopy: function (e) {
-        this.$bvToast.toast(`Copied "${e.trigger.attributes.copySource.nodeValue}" into clipboard.`, {
-          title: 'Success',
-          autoHideDelay: 1000,
-          variant: 'success'
-        })
       },
 
       getMessage: function() {
