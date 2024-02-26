@@ -412,12 +412,18 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             return array("validation_message" => "Device is not available.");
         }
 
-        $suspension_date = strtotime(reset($device)["device_suspension_date"]);
-        if( $suspension_date < time()) {
-            return array("validation_message" => "Device (ID:".$device_id.") has been suspended:  " . reset($device)["device_suspension_date"]);
+        //  Check if suspension date was set and invalidated when suspension time has passed
+        $suspension_date = reset($device)["device_suspension_date"];
+
+        if(!empty($suspension_date)){
+            $suspension_date_time = strtotime(reset($device)["device_suspension_date"]);
+            if( $suspension_date_time < time()) {
+                return array("validation_message" => "Device (ID:".$device_id.") has been suspended:  " . $suspension_date);
+            }
         }
 
-        if(isset($device) && ($suspension_date > time())) {
+        //  return device_id in case the device is valid
+        if(isset($device)) {
             return array("device_id" => $device_id);
         }
 
