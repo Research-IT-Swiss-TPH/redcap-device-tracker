@@ -451,22 +451,37 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             throw new Exception("Event must be set!");
         }
 
-        $params = [
-            'project_id'    => $project_id,
-            'records' => $record,
-            'fields' => $field,
-            'events' => $event_id,
-            'return_format' => 'json'
-        ];
+        //  query redcap_dataX directly instead of calling REDCap::getData()
+        //  this seems to resolve performance issues: https://github.com/vanderbilt-redcap/external-module-framework/issues/619
+        $data_table = method_exists('\REDCap', 'getDataTable') ? \REDCap::getDataTable($project_id) : "redcap_data";
+        $sql = "SELECT value as session_tracking_id FROM $data_table WHERE project_id = ? AND event_id= ? AND record = ? AND field_name = ?";
 
-        $data_t = json_decode( REDCap::getData($params), true);
+        $result = $this->query($sql, [$project_id, $event_id, $record, $field]);
 
-        //  Ensure this check is secure for multiple and single events! (Also cover the case when event has data inside other instrument)
-        if(empty($data_t[0][$field])) {
-            return $response;
+        while($row = $result->fetch_assoc()){
+            $session_tracking_id = $row['session_tracking_id'];
         }
 
-        $session_tracking_id =  reset($data_t)[$field];
+        if(empty($session_tracking_id)) {
+            return $response;
+        }
+        
+        // $params = [
+        //     'project_id'    => $project_id,
+        //     'records' => $record,
+        //     'fields' => $field,
+        //     'events' => $event_id,
+        //     'return_format' => 'json'
+        // ];
+
+        // $data_t = json_decode( REDCap::getData($params), true);
+
+        //  Ensure this check is secure for multiple and single events! (Also cover the case when event has data inside other instrument)
+        // if(empty($data_t[0][$field])) {
+        //     return $response;
+        // }
+
+        // $session_tracking_id =  reset($data_t)[$field];
        
         $filterLogic = "[session_tracking_id] = '" . $session_tracking_id . "'";
 
