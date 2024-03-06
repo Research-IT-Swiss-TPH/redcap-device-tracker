@@ -94,7 +94,7 @@
 
     </div>
     <div v-else-if="isError" class="tracking-error">
-      {{ errorMessage }}
+      <b-col><b-alert show variant="danger"><b>Device Tracker Error</b><br>There was a problem during data fetch from database. Please reload the page or notify and administrator.<br><br>Error Detail:<br><i>{{ errorMessage }}</i></b-alert></b-col>
     </div>
   </template>
   <script>
@@ -162,7 +162,7 @@
           })
           .catch(e => {
               this.isError = true
-              this.errorMessage = e.Message
+              this.errorMessage = e.message
               console.log(e)
           })
           .finally( () => {
@@ -231,7 +231,7 @@
       max-width: none;
       width:auto;
     }
-    .tracking-wrapper {
+    .tracking-wrapper, .tracking-error {
      margin-top:5px;
       margin-bottom: 5px;
       position: relative;
