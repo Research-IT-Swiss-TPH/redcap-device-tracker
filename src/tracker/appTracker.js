@@ -25,7 +25,8 @@ stph_dt_backend.fields.forEach(function(field, idx){
     render: h => h(App, {
       props: {
         page: stph_dt_backend.page,
-        field: field
+        field: field,
+        idx:idx
       }
     }),
   }).$mount("#STPH_DT_FIELD_"+field)

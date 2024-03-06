@@ -897,6 +897,12 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
      * @since 1.0.0
      */
     private function getDataFromBackend() {
+
+        $timeout = $this->getSystemSetting("timeout") ?? 1500;
+        //  Validate Timout Setting
+        if(!is_numeric($timeout) || $timeout < 500) {
+            $timeout = 1500;
+        }
         
         //  Initialize
         $data = [];
@@ -911,7 +917,8 @@ class deviceTracker extends \ExternalModules\AbstractExternalModule {
             "project_id" => PROJECT_ID,
             "record_id"  => $this->tracking_record,
             "name"       => $this->tracking_page,
-            "event_id"   => $this->tracking_event
+            "event_id"   => $this->tracking_event,
+            "timeout"    => $timeout
             
         ];
 

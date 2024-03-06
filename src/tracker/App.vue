@@ -1,6 +1,5 @@
 <template>
-    <div class="tracking-wrapper">
-
+    <div v-if="!isError" class="tracking-wrapper">
       <tracking-header :state="tracking.session_device_state" />
 
       <b-form-group class="tracking-actions">
@@ -68,7 +67,7 @@
         :record="page.record_id"
         :event_id="page.event_id"
       />
-      
+
       <tracking-delete
       v-if="tracking.session_tracking_id"
         :tracking="tracking"
@@ -94,8 +93,10 @@
       </b-alert>
 
     </div>
+    <div v-else-if="isError" class="tracking-error">
+      {{ errorMessage }}
+    </div>
   </template>
-  
   <script>
   import TrackingHeader from './components/TrackingHeader'
   import TrackingState from './components/TrackingState'
@@ -116,6 +117,8 @@
       return {
         tracking: {},
         isLoading: true,
+        isError: false,
+        errorMessage: '',
         alertText: "",
         showAlertTop: false,
         dismissSecs: 3,
@@ -125,7 +128,8 @@
     props: {
         page: Object,
         field: String,
-        module: Object
+        module: Object,
+        idx: Number
     },
     methods: {
       countDownChanged(dismissCountDown) {
@@ -144,21 +148,31 @@
           event_id: this.page.event_id
         }
 
-        this.$module
+        setTimeout(()=>{
+
+          this.$module
           .ajax('get-tracking-data', data)
           .then( response => {                 
             if(response.session_tracking_id !== undefined) {
               this.tracking = response
+              console.log("Successfully fetched data.", response)
             } else {
               console.log("No tracking.")
             }
           })
           .catch(e => {
-              console.log(e.message)
+              this.isError = true
+              this.errorMessage = e.Message
+              console.log(e)
           })
           .finally( () => {
             this.isLoading = false
-          })        
+          })
+
+
+        }, this.idx*this.page.timeout + 500)
+
+
       },
 
       getMessage: function() {

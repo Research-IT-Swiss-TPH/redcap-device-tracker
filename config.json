@@ -34,7 +34,13 @@
             "type": "project-id",
             "name": "<b>Devices Project</b><br>Project that manages device data",
             "required": true
-        }
+        },
+        {
+            "key": "timeout",
+            "type": "text",
+            "name": "<b>Custom Timout</b><br>Duration in ms to load between tracking instances on same page. Default: 1500, Minimum: 500",
+            "required": false
+        }        
     ],
 
     "project-settings": [
